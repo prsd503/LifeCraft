@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LifeCraft Collage Studio Pro</title>
+    <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#ff477e">
     <style>
         :root {
@@ -19,32 +20,48 @@
         
         header { text-align: center; margin-bottom: 15px; }
         header h1 { color: var(--primary); font-size: 1.8rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+        header p { font-size: 0.9rem; color: #6c757d; }
 
         .app-container { width: 100%; max-width: 500px; background: var(--card-bg); padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
-        .preview-area { width: 100%; aspect-ratio: 1; background: #e9ecef; border-radius: 15px; overflow: hidden; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; }
+        
+        .preview-area { width: 100%; aspect-ratio: 1; background: #e9ecef; border-radius: 15px; overflow: hidden; position: relative; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
         canvas { width: 100%; height: 100%; object-fit: contain; background: #fff; }
 
         .controls { display: flex; flex-direction: column; gap: 12px; }
         .row { display: flex; gap: 10px; align-items: center; }
         
-        label, button { padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; flex: 1; text-align: center; color: white; }
-        .btn-camera { background: #4cc9f0; }
-        .btn-upload { background: var(--secondary); }
-        .btn-action { background: var(--primary); }
-        .btn-secondary { background: #4a4e69; }
-        .btn-danger { background: #e63946; }
+        label, button { display: flex; align-items: center; justify-content: center; padding: 12px; border-radius: 12px; border: none; font-weight: bold; font-size: 0.95rem; cursor: pointer; transition: all 0.2s ease; flex: 1; text-align: center; }
+        
+        .btn-camera { background: #4cc9f0; color: white; }
+        .btn-upload { background: var(--secondary); color: white; }
+        .btn-action { background: var(--primary); color: white; }
+        .btn-secondary { background: #4a4e69; color: white; }
+        .btn-danger { background: #e63946; color: white; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        button:active:not(:disabled), label:active { transform: scale(0.98); opacity: 0.9; }
 
-        input[type="text"], input[type="number"], select { width: 100%; padding: 12px; border-radius: 12px; border: 2px solid #ddd; }
+        select, input[type="text"], input[type="number"], input[type="color"] { width: 100%; padding: 12px; border-radius: 12px; border: 2px solid #ddd; font-size: 0.95rem; outline: none; background: #fff; }
+        select:focus, input:focus { border-color: var(--primary); }
+
         .section-box { background: #f8f9fa; padding: 12px; border-radius: 12px; border: 1px dashed #ccc; margin-top: 5px; }
-        .slider-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
-        #status { text-align: center; font-size: 0.85rem; font-weight: bold; color: var(--primary); margin: 10px 0; }
+        .section-box h3 { font-size: 0.9rem; margin-bottom: 8px; color: #495057; display: flex; justify-content: space-between; }
+
+        .slider-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; width: 100%; }
+        .slider-group label { display: flex; justify-content: space-between; padding: 0; font-size: 0.85rem; color: #555; font-weight: normal; }
+        .slider-group input[type="range"] { width: 100%; accent-color: var(--primary); }
+
+        #status { text-align: center; font-size: 0.85rem; font-weight: bold; color: var(--primary); min-height: 20px; margin-top: 5px; }
         input[type="file"] { display: none; }
+
+        /* Console logger element */
+        .debug-panel { background: #2b2d42; color: #a7c957; font-family: monospace; padding: 10px; border-radius: 8px; margin-top: 15px; font-size: 0.75rem; max-height: 120px; overflow-y: auto; width: 100%; }
     </style>
 </head>
 <body>
 
     <header>
         <h1>✨ LifeCraft Studio Pro ✨</h1>
+        <p>Capture, Combine, and Customize</p>
     </header>
 
     <div class="app-container">
@@ -52,84 +69,369 @@
             <canvas id="collageCanvas" width="800" height="800"></canvas>
         </div>
 
-        <div id="status">Add photos to begin!</div>
+        <div id="status">Tap buttons below to mix camera shots and gallery photos!</div>
 
         <div class="controls">
             <div class="row">
-                <label class="btn-camera">📸 Camera <input type="file" id="cameraInput" accept="image/*" capture="environment"></label>
-                <label class="btn-upload">🖼️ Gallery <input type="file" id="imageInput" multiple accept="image/*"></label>
+                <label class="btn-camera">
+                    📸 Click Photo
+                    <input type="file" id="cameraInput" accept="image/*" capture="environment">
+                </label>
+                <label class="btn-upload">
+                    🖼️ Gallery (Multi)
+                    <input type="file" id="imageInput" multiple accept="image/*">
+                </label>
             </div>
             
-            <button class="btn-secondary" id="shuffleBtn">🎲 Shuffle Style</button>
+            <div class="row">
+                <button class="btn-secondary" id="shuffleBtn">🎲 Shuffle Style</button>
+                <button class="btn-danger" id="clearBtn" style="display:none;">🗑️ Clear All</button>
+            </div>
 
-            <div class="section-box">
-                <h3>✍️ Event Occasion</h3>
-                <div class="row" style="margin-top: 8px;">
-                    <input type="text" id="customText" placeholder="Event title (e.g., Summer Trip)">
-                    <input type="color" id="customColor" value="#ff477e" style="width:60px; height:45px; border:none; cursor:pointer;">
+            <div class="section-box" id="transformControls" style="display:none;">
+                <h3>⚙️ Adjust Current Photo 
+                    <select id="photoSelector" style="width:auto; padding:4px; font-size:0.8rem; border-radius:6px;"></select>
+                </h3>
+                <div class="slider-group">
+                    <label><span>Size (Scale)</span><span id="scaleVal">1.0x</span></label>
+                    <input type="range" id="scaleSlider" min="0.2" max="2.5" step="0.05" value="1">
+                </div>
+                <div class="slider-group">
+                    <label><span>Angle (Rotation)</span><span id="angleVal">0°</span></label>
+                    <input type="range" id="angleSlider" min="-180" max="180" step="5" value="0">
                 </div>
             </div>
 
-            <button class="btn-action" id="downloadImgBtn">📥 Download Image</button>
+            <div class="section-box">
+                <h3>🎨 Themes & Events</h3>
+                <div class="row" style="margin-bottom:8px;">
+                    <select id="themeSelect">
+                        <option value="none">No Theme (Clean)</option>
+                        <option value="birthday">🎂 Happy Birthday</option>
+                        <option value="anniversary">❤️ Happy Anniversary</option>
+                        <option value="custom">✍️ Custom Life Event</option>
+                    </select>
+                </div>
+                <div id="customThemeOptions" class="row" style="display: none; margin-bottom:8px;">
+                    <input type="text" id="customText" placeholder="Type event name... e.g. Graduation!">
+                    <input type="color" id="customColor" value="#ff477e" style="width:60px; padding:2px; height:45px;">
+                </div>
+            </div>
+
+            <div class="row">
+                <button class="btn-action" id="downloadImgBtn">📥 Download Image</button>
+            </div>
+
+            <div class="section-box">
+                <h3>🎵 Video Generation Options</h3>
+                <div class="row" style="margin-bottom: 8px;">
+                    <label class="btn-upload" style="background: #6c757d; font-size: 0.85rem; padding: 8px;">
+                        🎵 Choose Audio
+                        <input type="file" id="audioInput" accept="audio/*">
+                    </label>
+                    <div style="flex: 1; display: flex; align-items: center; gap: 5px;">
+                        <input type="number" id="durationInput" value="5" min="3" max="30" style="padding: 8px;">
+                        <span style="font-size: 0.85rem;">Secs</span>
+                    </div>
+                </div>
+                <button class="btn-action" id="downloadVidBtn" style="background: #2a9d8f;">🎥 Export Compatible Video</button>
+            </div>
         </div>
     </div>
+
+    <div class="debug-panel" id="debugLog">System Log initialized... Ready.</div>
 
     <script>
         const canvas = document.getElementById('collageCanvas');
         const ctx = canvas.getContext('2d');
-        let loadedImages = [];
-        let currentLayout = 'grid';
+        const imageInput = document.getElementById('imageInput');
+        const cameraInput = document.getElementById('cameraInput');
+        const themeSelect = document.getElementById('themeSelect');
+        const customThemeOptions = document.getElementById('customThemeOptions');
+        const customText = document.getElementById('customText');
+        const customColor = document.getElementById('customColor');
+        const shuffleBtn = document.getElementById('shuffleBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const downloadImgBtn = document.getElementById('downloadImgBtn');
+        const audioInput = document.getElementById('audioInput');
+        const durationInput = document.getElementById('durationInput');
+        const downloadVidBtn = document.getElementById('downloadVidBtn');
+        const statusText = document.getElementById('status');
+        const debugLog = document.getElementById('debugLog');
 
-        // Draw Logic
+        const transformControls = document.getElementById('transformControls');
+        const photoSelector = document.getElementById('photoSelector');
+        const scaleSlider = document.getElementById('scaleSlider');
+        const angleSlider = document.getElementById('angleSlider');
+        const scaleVal = document.getElementById('scaleVal');
+        const angleVal = document.getElementById('angleVal');
+
+        let loadedImages = []; 
+        let currentLayout = 'grid'; 
+
+        const themes = {
+            none: { bg: '#ffffff', text: '', color: '' },
+            birthday: { bg: '#fff0f3', text: 'HAPPY BIRTHDAY 🎉', color: '#ff477e' },
+            anniversary: { bg: '#fff0f5', text: 'HAPPY ANNIVERSARY ❤️', color: '#d90429' }
+        };
+
+        // Custom Local logger function
+        function logMsg(msg) {
+            debugLog.innerHTML += `<br>> ${msg}`;
+            debugLog.scrollTop = debugLog.scrollHeight;
+            console.log(msg);
+        }
+
+        window.onerror = function(message, source, lineno, colno, error) {
+            logMsg(`Error: ${message} on line ${lineno}`);
+            return false;
+        };
+
+        window.onload = () => { 
+            logMsg("Application mounted successfully.");
+            drawCollage(); 
+        };
+
+        function appendFiles(files) {
+            logMsg(`Attempting to parse ${files.length} file(s)...`);
+            statusText.innerText = "Processing photos...";
+            let loadedCount = 0;
+            const initialLength = loadedImages.length;
+
+            files.forEach((file, index) => {
+                logMsg(`Reading file: ${file.name || 'Camera Capture'} (${file.type})`);
+                const img = new Image();
+                
+                // Read via FileReader to circumvent local environment canvas restrictions
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    img.src = event.target.result;
+                };
+                
+                img.onload = () => {
+                    const trackingIdx = initialLength + loadedCount;
+                    
+                    loadedImages.push({
+                        element: img,
+                        scale: 1.0,
+                        angle: 0,
+                        baseX: 0,
+                        baseY: 0
+                    });
+                    
+                    let opt = document.createElement('option');
+                    opt.value = trackingIdx;
+                    opt.innerText = `Photo ${trackingIdx + 1}`;
+                    photoSelector.appendChild(opt);
+
+                    loadedCount++;
+                    logMsg(`Successfully loaded photo slot ${trackingIdx + 1}`);
+
+                    if (loadedCount === files.length) {
+                        statusText.innerText = `Total ${loadedImages.length} photo(s) active.`;
+                        transformControls.style.display = 'block';
+                        clearBtn.style.display = 'block';
+                        
+                        photoSelector.value = trackingIdx;
+                        photoSelector.dispatchEvent(new Event('change'));
+                        
+                        calculateBaseLayout();
+                        drawCollage();
+                    }
+                };
+                img.onerror = (e) => {
+                    logMsg(`Image element decoding failed.`);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        imageInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                appendFiles(Array.from(e.target.files));
+                imageInput.value = ""; 
+            }
+        });
+
+        cameraInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                appendFiles(Array.from(e.target.files));
+                cameraInput.value = ""; 
+            }
+        });
+
+        clearBtn.onclick = () => {
+            loadedImages = [];
+            photoSelector.innerHTML = '';
+            transformControls.style.display = 'none';
+            clearBtn.style.display = 'none';
+            statusText.innerText = "Workspace cleared!";
+            logMsg("Workspace clear event triggered.");
+            drawCollage();
+        };
+
+        function calculateBaseLayout() {
+            if (loadedImages.length === 0) return;
+            logMsg(`Recalculating canvas boundaries for layout format: [${currentLayout}]`);
+            
+            if (currentLayout === 'grid' || loadedImages.length === 1) {
+                let cols = Math.ceil(Math.sqrt(loadedImages.length));
+                let rows = Math.ceil(loadedImages.length / cols);
+                let w = canvas.width / cols;
+                let h = (canvas.height - 100) / rows;
+
+                loadedImages.forEach((imgObj, i) => {
+                    let col = i % cols;
+                    let row = Math.floor(i / cols);
+                    imgObj.baseX = (col * w) + (w / 2);
+                    imgObj.baseY = (row * h) + (h / 2) + 20;
+                    imgObj.w = w - 30;
+                    imgObj.h = h - 30;
+                });
+            } else if (currentLayout === 'rows') {
+                let h = (canvas.height - 120) / loadedImages.length;
+                loadedImages.forEach((imgObj, i) => {
+                    imgObj.baseX = canvas.width / 2;
+                    imgObj.baseY = (i * h) + (h / 2) + 20;
+                    imgObj.w = canvas.width - 50;
+                    imgObj.h = h - 20;
+                });
+            } else if (currentLayout === 'scattered') {
+                loadedImages.forEach((imgObj) => {
+                    if(imgObj.baseX === 0) {
+                        imgObj.baseX = Math.random() * (canvas.width - 300) + 150;
+                        imgObj.baseY = Math.random() * (canvas.height - 400) + 150;
+                        imgObj.angle = Math.floor((Math.random() - 0.5) * 30);
+                    }
+                    imgObj.w = 260;
+                    imgObj.h = 260;
+                });
+            }
+        }
+
+        photoSelector.addEventListener('change', () => {
+            const currentImg = loadedImages[photoSelector.value];
+            if (currentImg) {
+                scaleSlider.value = currentImg.scale;
+                angleSlider.value = currentImg.angle;
+                scaleVal.innerText = `${currentImg.scale}x`;
+                angleVal.innerText = `${currentImg.angle}°`;
+            }
+        });
+
+        scaleSlider.oninput = (e) => {
+            const currentImg = loadedImages[photoSelector.value];
+            if (currentImg) {
+                currentImg.scale = parseFloat(e.target.value);
+                scaleVal.innerText = `${currentImg.scale}x`;
+                drawCollage();
+            }
+        };
+
+        angleSlider.oninput = (e) => {
+            const currentImg = loadedImages[photoSelector.value];
+            if (currentImg) {
+                currentImg.angle = parseInt(e.target.value);
+                angleVal.innerText = `${currentImg.angle}°`;
+                drawCollage();
+            }
+        };
+
+        themeSelect.addEventListener('change', () => {
+            customThemeOptions.style.display = themeSelect.value === 'custom' ? 'flex' : 'none';
+            drawCollage();
+        });
+        customText.addEventListener('input', drawCollage);
+        customColor.addEventListener('input', drawCollage);
+
+        shuffleBtn.onclick = () => {
+            const layouts = ['grid', 'scattered', 'rows'];
+            currentLayout = layouts[(layouts.indexOf(currentLayout) + 1) % layouts.length];
+            statusText.innerText = `Switched layout to ${currentLayout}.`;
+            calculateBaseLayout();
+            drawCollage();
+        };
+
         function drawCollage() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#ffffff";
+            
+            let activeText = "";
+            let activeColor = "#ffffff";
+            let bgGradientColor = "#ffffff";
+
+            if (themeSelect.value === 'custom') {
+                activeText = customText.value.toUpperCase() || "MY SPECIAL EVENT ✨";
+                activeColor = customColor.value;
+                bgGradientColor = activeColor + "15"; 
+            } else {
+                const theme = themes[themeSelect.value] || themes.none;
+                activeText = theme.text;
+                activeColor = theme.color;
+                bgGradientColor = theme.bg || "#ffffff";
+            }
+
+            ctx.fillStyle = bgGradientColor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (loadedImages.length === 0) {
+                ctx.fillStyle = "#666666";
+                ctx.font = "bold 26px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText("📸 Click Photo or Add Gallery Photos", canvas.width/2, canvas.height/2);
+                return;
+            }
 
             loadedImages.forEach((imgObj) => {
                 ctx.save();
                 ctx.translate(imgObj.baseX, imgObj.baseY);
                 ctx.rotate((imgObj.angle * Math.PI) / 180);
-                ctx.drawImage(imgObj.element, -130, -130, 260, 260);
+                
+                let targetW = imgObj.w * imgObj.scale;
+                let targetH = imgObj.h * imgObj.scale;
+
+                ctx.fillStyle = "white";
+                ctx.shadowColor = "rgba(0,0,0,0.15)";
+                ctx.shadowBlur = 12;
+                ctx.fillRect(-targetW / 2 - 8, -targetH / 2 - 8, targetW + 16, targetH + 16);
+                ctx.shadowBlur = 0; 
+
+                ctx.drawImage(imgObj.element, -targetW / 2, -targetH / 2, targetW, targetH);
                 ctx.restore();
             });
 
-            // Draw Custom Title
-            const title = document.getElementById('customText').value;
-            if (title) {
-                ctx.fillStyle = document.getElementById('customColor').value;
-                ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
+            if (activeText) {
+                ctx.fillStyle = activeColor;
+                ctx.fillRect(0, canvas.height - 90, canvas.width, 90);
+                
                 ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 40px Arial';
+                ctx.font = 'bold 32px Arial';
                 ctx.textAlign = 'center';
-                ctx.fillText(title, canvas.width / 2, canvas.height - 35);
+                ctx.textBaseline = 'middle';
+                ctx.fillText(activeText, canvas.width / 2, canvas.height - 45);
             }
         }
 
-        // Event Listeners
-        document.getElementById('imageInput').onchange = (e) => {
-            Array.from(e.target.files).forEach(file => {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        loadedImages.push({element: img, angle: Math.random() * 20 - 10, baseX: 400, baseY: 400});
-                        drawCollage();
-                    };
-                    img.src = event.target.result;
-                };
-                reader.readAsDataURL(file);
-            });
-        };
-
-        document.getElementById('customText').oninput = drawCollage;
-        document.getElementById('customColor').oninput = drawCollage;
-        document.getElementById('downloadImgBtn').onclick = () => {
+        downloadImgBtn.onclick = () => {
+            if(loadedImages.length === 0) return alert("Please add photos first!");
             const link = document.createElement('a');
-            link.download = 'my_collage.jpg';
+            link.download = 'my_life_collage.jpg';
             link.href = canvas.toDataURL('image/jpeg', 0.95);
             link.click();
+            logMsg("Downloaded image export.");
         };
-    </script>
-</body>
-</html>
+
+        downloadVidBtn.onclick = async () => {
+            if(loadedImages.length === 0) return alert("Please upload photos first!");
+            if(!audioInput.files[0]) return alert("Please pick an Audio Track first!");
+
+            statusText.innerText = "Encoding Mobile Video... Please wait.";
+            downloadVidBtn.disabled = true;
+            logMsg("Starting video recording generation context...");
+            
+            const duration = parseInt(durationInput.value) || 5;
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const fileReader = new FileReader();
+            
+            fileReader.onload = async (e) => {
+                try {
+                    const audioBuffer = await audioCtx.deco
