@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeCraft Collage Studio</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff477e">
+    <style>
+        :root {
+            --primary: #ff477e;
+            --secondary: #ff85a2;
+            --bg: #f0f2f5;
+            --card-bg: #ffffff;
+            --text: #2b2d42;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        
+        header { text-align: center; margin-bottom: 15px; }
+        header h1 { color: var(--primary); font-size: 1.8rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+        header p { font-size: 0.9rem; color: #6c757d; }
+
+        .app-container { width: 100%; max-width: 500px; background: var(--card-bg); padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        
+        .preview-area { width: 100%; aspect-ratio: 1; background: #e9ecef; border-radius: 15px; overflow: hidden; position: relative; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
+        canvas { width: 100%; height: 100%; object-fit: contain; }
+
+        .controls { display: flex; flex-direction: column; gap: 12px; }
+        .row { display: flex; gap: 10px; }
+        
+        label, button { display: flex; align-items: center; justify-content: center; padding: 12px; border-radius: 12px; border: none; font-weight: bold; font-size: 0.95rem; cursor: pointer; transition: all 0.2s ease; flex: 1; text-align: center; }
+        
+        .btn-upload { background: var(--secondary); color: white; }
+        .btn-action { background: var(--primary); color: white; }
+        .btn-secondary { background: #4a4e69; color: white; }
+        button:active, label:active { transform: scale(0.98); opacity: 0.9; }
+
+        select, input[type="number"] { width: 100%; padding: 12px; border-radius: 12px; border: 2px solid #ddd; font-size: 0.95rem; outline: none; background: #fff; }
+        select:focus, input:focus { border-color: var(--primary); }
+
+        .audio-section { background: #f8f9fa; padding: 12px; border-radius: 12px; border: 1px dashed #ccc; margin-top: 5px; }
+        .audio-section h3 { font-size: 0.9rem; margin-bottom: 8px; color: #495057; }
+
+        #status { text-align: center; font-size: 0.85rem; font-weight: bold; color: var(--primary); min-height: 20px; margin-top: 5px; }
+        input[type="file"] { display: none; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>✨ LifeCraft Studio ✨</h1>
+        <p>Create Magic Memories in Seconds</p>
+    </header>
+
+    <div class="app-container">
+        <div class="preview-area">
+            <canvas id="collageCanvas" width="800" height="800"></canvas>
+        </div>
+
+        <div id="status">Ready! Upload some photos.</div>
+
+        <div class="controls">
+            <div class="row">
+                <label class="btn-upload">
+                    📸 Add Photos
+                    <input type="file" id="imageInput" multiple accept="image/*">
+                </label>
+                <button class="btn-secondary" id="shuffleBtn">🎲 Shuffle Style</button>
+            </div>
+
+            <div class="row">
+                <select id="themeSelect">
+                    <option value="none">No Theme (Clean)</option>
+                    <option value="birthday">🎂 Happy Birthday</option>
+                    <option value="anniversary">❤️ Happy Anniversary</option>
+                    <option value="travel">✈️ Wanderlust / Travel</option>
+                    <option value="congrats">🎉 Congratulations</option>
+                </select>
+            </div>
+
+            <div class="row">
+                <button class="btn-action" id="downloadImgBtn">📥 Download Image</button>
+            </div>
+
+            <div class="audio-section">
+                <h3>🎵 Video Generator Options</h3>
+                <div class="row" style="margin-bottom: 8px;">
+                    <label class="btn-upload" style="background: #6c757d; font-size: 0.85rem; padding: 8px;">
+                        🎵 Choose Audio
+                        <input type="file" id="audioInput" accept="audio/*">
+                    </label>
+                    <div style="flex: 1; display: flex; align-items: center; gap: 5px;">
+                        <input type="number" id="durationInput" value="5" min="3" max="30" style="padding: 8px;">
+                        <span style="font-size: 0.85rem;">Secs</span>
+                    </div>
+                </div>
+                <button class="btn-action" id="downloadVidBtn" style="background: #2a9d8f;">🎥 Export as MP4 Video</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('collageCanvas');
+        const ctx = canvas.getContext('2d');
+        const imageInput = document.getElementById('imageInput');
+        const themeSelect = document.getElementById('themeSelect');
+        const shuffleBtn = document.getElementById('shuffleBtn');
+        const downloadImgBtn = document.getElementById('downloadImgBtn');
+        const audioInput = document.getElementById('audioInput');
+        const durationInput = document.getElementById('durationInput');
+        const downloadVidBtn = document.getElementById('downloadVidBtn');
+        const statusText = document.getElementById('status');
+
+        let loadedImages = [];
+        let currentLayout = 'grid'; // grid, scattered, rows
+
+        // Theme Definitions
+        const themes = {
+            none: { bg: '#ffffff', text: '', emoji: '' },
+            birthday: { bg: '#fff0f3', text: 'HAPPY BIRTHDAY 🎉', color: '#ff477e', secondary: '#ffb3c1' },
+            anniversary: { bg: '#fff0f5', text: 'HAPPY ANNIVERSARY ❤️', color: '#d90429', secondary: '#ffb3c1' },
+            travel: { bg: '#e0f1f4', text: 'EXPLORE THE WORLD ✈️', color: '#0077b6', secondary: '#90e0ef' },
+            congrats: { bg: '#fdf0d5', text: 'CONGRATULATIONS 🌟', color: '#7209b7', secondary: '#f72585' }
+        };
+
+        // Handle Image Uploads
+        imageInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            loadedImages = [];
+            statusText.innerText = "Loading images...";
+            
+            let loadedCount = 0;
+            files.forEach(file => {
+                const img = new Image();
+                img.src = URL.createObjectURL(file);
+                img.onload = () => {
+                    loadedImages.push(img);
+                    loadedCount++;
+                    if (loadedCount === files.length) {
+                        statusText.innerText = `${loadedImages.length} image(s) loaded!`;
+                        drawCollage();
+                    }
+                };
+            });
+        });
+
+        // Trigger Redraws
+        themeSelect.addEventListener('change', drawCollage);
+        shuffleBtn.addEventListener('change', drawCollage);
+        shuffleBtn.onclick = () => {
+            const layouts = ['grid', 'scattered', 'rows'];
+            currentLayout = layouts[Math.floor(Math.random() * layouts.length)];
+            statusText.innerText = `Switched to ${currentLayout} layout!`;
+            drawCollage();
+        };
+
+        // Main Drawing Function
+        function drawCollage() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const theme = themes[themeSelect.value] || themes.none;
+            
+            // Draw background
+            ctx.fillStyle = theme.bg;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (loadedImages.length === 0) {
+                // Placeholder if no images
+                ctx.fillStyle = "#888";
+                ctx.font = "30px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText("Tap 'Add Photos' to Start", canvas.width/2, canvas.height/2);
+                return;
+            }
+
+            // Draw Photo Layouts
+            if (currentLayout === 'grid' || loadedImages.length === 1) {
+                let cols = Math.ceil(Math.sqrt(loadedImages.length));
+                let rows = Math.ceil(loadedImages.length / cols);
+                let w = canvas.width / cols;
+                let h = (canvas.height - 100) / rows; // Leave space for text banner
+
+                loadedImages.forEach((img, i) => {
+                    let col = i % cols;
+                    let row = Math.floor(i / cols);
+                    ctx.drawImage(img, col * w + 10, row * h + 20, w - 20, h - 20);
+                });
+            } else if (currentLayout === 'rows') {
+                let h = (canvas.height - 120) / loadedImages.length;
+                loadedImages.forEach((img, i) => {
+                    ctx.drawImage(img, 20, (i * h) + 20, canvas.width - 40, h - 20);
+                });
+            } else if (currentLayout === 'scattered') {
+                loadedImages.forEach((img) => {
+                    ctx.save();
+                    let cx = Math.random() * (canvas.width - 300) + 150;
+                    let cy = Math.random() * (canvas.height - 400) + 150;
+                    let angle = (Math.random() - 0.5) * 0.4; // slight tilt
+                    ctx.translate(cx, cy);
+                    ctx.rotate(angle);
+                    // Draw polaroid border
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(-120, -120, 240, 270);
+                    ctx.shadowColor = 'rgba(0,0,0,0.2)';
+                    ctx.shadowBlur = 10;
+                    ctx.drawImage(img, -110, -110, 220, 220);
+                    ctx.restore();
+                });
+            }
+
+            // Draw Theme Text Overlay
+            if (theme.text) {
+                ctx.fillStyle = theme.color;
+                ctx.fillRect(0, canvas.height - 90, canvas.width, 90);
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 36px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(theme.text, canvas.width / 2, canvas.height - 45);
+            }
+        }
+
+        // Download Image File
+        downloadImgBtn.onclick = () => {
+            if(loadedImages.length === 0) return alert("Please add images first!");
+            const link = document.createElement('a');
+            link.download = 'collage.jpg';
+            link.href = canvas.toDataURL('image/jpeg', 0.9);
+            link.click();
+        };
+
+        // Render to MP4 Video with Audio
+        downloadVidBtn.onclick = async () => {
+            if(loadedImages.length === 0) return alert("Please add images first!");
+            if(!audioInput.files[0]) return alert("Please select a music file first!");
+
+            statusText.innerText = "Processing Video... Please wait.";
+            const duration = parseInt(durationInput.value) || 5;
+            
+            // Audio Context setup
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const fileReader = new FileReader();
+            
+            fileReader.onload = async (e) => {
+                const audioBuffer = await audioCtx.decodeAudioData(e.target.result);
+                const source = audioCtx.createBufferSource();
+                source.buffer = audioBuffer;
+                
+                const dest = audioCtx.createMediaStreamDestination();
+                source.connect(dest);
+                
+                // Capture Canvas Stream
+                const canvasStream = canvas.captureStream(25); // 25 FPS
+                // Combine audio track and video track
+                const combinedStream = new MediaStream([
+                    ...canvasStream.getVideoTracks(),
+                    ...dest.stream.getAudioTracks()
+                ]);
+
+                const mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm;codecs=vp9' });
+                const chunks = [];
+
+                mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: 'video/mp4' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'collage_video.mp4';
+                    a.click();
+                    statusText.innerText = "Video Downloaded Successfully!";
+                    source.stop();
+                };
+
+                // Start recording
+                mediaRecorder.start();
+                source.start(0);
+
+                // Simulate slight animation shifts during recording to keep video active
+                let startTime = Date.now();
+                let interval = setInterval(() => {
+                    if (currentLayout === 'scattered') drawCollage(); // Re-shuffles elements subtly
+                    if (Date.now() - startTime > duration * 1000) {
+                        clearInterval(interval);
+                        mediaRecorder.stop();
+                    }
+                }, 100);
+            };
+
+            fileReader.readAsArrayBuffer(audioInput.files[0]);
+        };
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('Service Worker Active'));
+        }
+    </script>
+</body>
+</html>
