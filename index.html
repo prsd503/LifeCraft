@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+     <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -254,7 +254,6 @@
 
   <div class="container">
     
-    <!-- Step 1: Configuration -->
     <div class="card">
       <div class="card-title">📐 Theme & Layout Options</div>
       
@@ -275,7 +274,6 @@
       </div>
     </div>
 
-    <!-- Step 2: Media Picker -->
     <div class="card">
       <div class="card-title">📸 Import Your Media</div>
       <div class="file-grid">
@@ -296,7 +294,6 @@
       <div id="audioStatus" style="font-size:0.8rem; text-align:center; color:#777; margin-top:-5px;">No track loaded</div>
     </div>
 
-    <!-- Canvas Preview Matrix -->
     <div class="card">
       <div class="card-title">👁️ Live Preview</div>
       <div id="canvas-container">
@@ -304,7 +301,6 @@
       </div>
     </div>
 
-    <!-- Video settings and Export Actions -->
     <div class="card">
       <div class="card-title">💾 Output Engine</div>
       
@@ -317,7 +313,6 @@
 
   </div>
 
-  <!-- Custom Alert Modal View Structure -->
   <div class="modal-overlay" id="customModal">
     <div class="modal">
       <div class="modal-title" id="modalTitle">Notification</div>
@@ -396,13 +391,14 @@
       }
     });
 
-    // File Input Handlers (Combined Camera and Gallery logic mapping)
+    // SAFE FILE INPUT HANDLER: Updates preview progressively and handles errors safely
     const loadFiles = (e) => {
       const files = e.target.files;
       if(!files.length) return;
 
       let itemsProcessed = 0;
-      loadedImages = []; // Clear old items
+      let successfulLoads = 0;
+      loadedImages = []; 
 
       for(let i=0; i < files.length; i++) {
         const reader = new FileReader();
@@ -410,10 +406,22 @@
           const img = new Image();
           img.onload = () => {
             loadedImages.push(img);
+            successfulLoads++;
+            itemsProcessed++;
+            
+            // Progressive render so user sees changes immediately
+            renderCollage(); 
+            
+            if(itemsProcessed === files.length) {
+              showModal('Success 🎉', `${successfulLoads} images loaded successfully into LifeCraft!`);
+            }
+          };
+          
+          img.onerror = () => {
             itemsProcessed++;
             if(itemsProcessed === files.length) {
-              showModal('Success 🎉', `${loadedImages.length} images loaded successfully! Rendering LifeCraft canvas.`);
               renderCollage();
+              showModal('Notice ⚠️', 'Some images could not be read. Showing successfully loaded images.');
             }
           };
           img.src = event.target.result;
@@ -432,11 +440,17 @@
         document.getElementById('audioStatus').innerText = `Loaded: ${file.name.substring(0, 20)}...`;
         const reader = new FileReader();
         reader.onload = function(evt) {
-          audioContext = new (window.AudioContext || window.webkitAudioContext)();
-          audioContext.decodeAudioData(evt.target.result, (buffer) => {
-            userAudioBuffer = buffer;
-            showModal('Music Ready 🎵', 'Audio track successfully attached to LifeCraft MP4 generator.');
-          });
+          try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            audioContext.decodeAudioData(evt.target.result, (buffer) => {
+              userAudioBuffer = buffer;
+              showModal('Music Ready 🎵', 'Audio track successfully attached to LifeCraft MP4 generator.');
+            }, (err) => {
+              showModal('Audio Error ❌', 'Failed to decode audio file. Try using a standard MP3.');
+            });
+          } catch(err) {
+            showModal('Error ❌', 'Web Audio API is restricted or unsupported on this mobile browser.');
+          }
         };
         reader.readAsArrayBuffer(file);
       }
@@ -444,52 +458,55 @@
 
     // Core Canvas Generative Drawing Logic
     function renderCollage() {
-      const activeTheme = themes[currentTheme];
-      
-      // Clean frame canvas buffer structure
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      // Draw Theme Border Background Architecture Frame
-      ctx.fillStyle = activeTheme.bg;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      try {
+        const activeTheme = themes[currentTheme] || themes.generic;
+        
+        // Clean frame canvas buffer structure
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw Theme Border Background Architecture Frame
+        ctx.fillStyle = activeTheme.bg;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      const margin = 60;
-      const innerW = canvas.width - (margin * 2);
-      const innerH = canvas.height - (margin * 2 - 20);
+        const margin = 60;
+        const innerW = canvas.width - (margin * 2);
+        const innerH = canvas.height - (margin * 2 - 20);
 
-      if(loadedImages.length === 0) {
-        // Fallback default state presentation card framework logic rendering placeholder text
-        ctx.fillStyle = "#bbb";
-        ctx.font = "italic 36px Arial";
-        ctx.textAlign = "center";
-        ctx.fillText("Upload photos to construct live LifeCraft generation grid", canvas.width/2, canvas.height/2);
+        if(loadedImages.length === 0) {
+          ctx.fillStyle = "#888888";
+          ctx.font = "italic 32px Arial";
+          ctx.textAlign = "center";
+          ctx.fillText("📸 Tap above to import photos from your device", canvas.width/2, canvas.height/2);
+          drawDecorations(activeTheme);
+          return;
+        }
+
+        ctx.save();
+        let clipPath = new Path2D();
+        clipPath.rect(margin, margin, innerW, innerH);
+        ctx.clip(clipPath);
+
+        // Render Layout Strategies
+        if (currentLayout === 'grid') {
+          renderGridLayout(innerW, innerH, margin);
+        } else if (currentLayout === 'strips') {
+          renderStripsLayout(innerW, innerH, margin);
+        } else if (currentLayout === 'diagonal') {
+          renderDiagonalLayout(innerW, innerH, margin);
+        } else {
+          renderRandomLayout(innerW, innerH, margin);
+        }
+
+        ctx.restore();
         drawDecorations(activeTheme);
-        return;
+      } catch (error) {
+        console.error("Canvas Render Error: ", error);
       }
-
-      ctx.save();
-      // Establish Clipping Matrix boundary space wrapper layout architecture container
-      let clipPath = new Path2D();
-      clipPath.rect(margin, margin, innerW, innerH);
-      ctx.clip(clipPath);
-
-      // Render Layout Strategies
-      if (currentLayout === 'grid') {
-        renderGridLayout(innerW, innerH, margin);
-      } else if (currentLayout === 'strips') {
-        renderStripsLayout(innerW, innerH, margin);
-      } else if (currentLayout === 'diagonal') {
-        renderDiagonalLayout(innerW, innerH, margin);
-      } else {
-        renderRandomLayout(innerW, innerH, margin);
-      }
-
-      ctx.restore();
-      drawDecorations(activeTheme);
     }
 
     // Dynamic Image Cover Crop Vector Calculator Utility Function Matrix alignment wrapper 
     function drawImageCover(img, sx, sy, sw, sh) {
+      if (!img || !img.width) return;
       const imgRatio = img.width / img.height;
       const targetRatio = sw / sh;
       let dx, dy, dw, dh;
@@ -508,7 +525,7 @@
       ctx.drawImage(img, dx, dy, dw, dh, sx, sy, sw, sh);
     }
 
-    /* Layout Subroutines mapping dynamically against uploaded elements sizes arrays length objects loops */
+    /* Layout Subroutines */
     function renderGridLayout(w, h, m) {
       const count = loadedImages.length;
       const cols = Math.ceil(Math.sqrt(count));
@@ -576,10 +593,10 @@
       const midY = h / 2;
 
       const points = [
-        [m, m, midX, midY],
-        [midX, m, w, midY],
-        [m, midY, midX, h],
-        [midX, midY, w, h]
+        [0, 0, midX, midY],
+        [midX, 0, midX, midY],
+        [0, midY, midX, midY],
+        [midX, midY, midX, midY]
       ];
 
       for(let i=0; i < Math.min(count, 4); i++) {
@@ -631,6 +648,11 @@
         return;
       }
 
+      if (typeof canvas.captureStream !== "function") {
+        showModal('Unsupported Browser ❌', 'Your mobile browser does not support live canvas video streaming exports.');
+        return;
+      }
+
       const durationSec = parseInt(document.getElementById('videoDuration').value) || 5;
       const fps = 25;
       const totalFrames = durationSec * fps;
@@ -639,20 +661,4 @@
       document.getElementById('downloadVidBtn').innerHTML = `<span class="spinner"></span> Rendering Video...`;
       document.getElementById('downloadVidBtn').disabled = true;
 
-      const stream = canvas.captureStream(fps);
-      
-      let mediaRecorderOptions = { mimeType: 'video/mp4; codecs=vp9' };
-      if (!MediaRecorder.isTypeSupported(mediaRecorderOptions.mimeType)) {
-         mediaRecorderOptions = { mimeType: 'video/webm' }; 
-      }
-
-      let audioTrackStreamDestination;
-      if (userAudioBuffer && audioContext) {
-        audioTrackStreamDestination = audioContext.createMediaStreamDestination();
-        let bufferSourceNode = audioContext.createBufferSource();
-        bufferSourceNode.buffer = userAudioBuffer;
-        bufferSourceNode.loop = true;
-        bufferSourceNode.connect(audioTrackStreamDestination);
-        bufferSourceNode.start();
-        
-        const audioTrack = a
+      const stream = canvas.captureStr
