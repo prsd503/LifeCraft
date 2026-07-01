@@ -1,664 +1,302 @@
-     <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LifeCraft</title>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#4ECDC4">
-  <style>
-    :root {
-      --primary: #FF6B6B;
-      --secondary: #4ECDC4;
-      --accent: #FFE66D;
-      --dark: #2F3E46;
-      --light: #F7FFF7;
-      --radius: 16px;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeCraft Collage Studio</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff477e">
+    <style>
+        :root {
+            --primary: #ff477e;
+            --secondary: #ff85a2;
+            --bg: #f0f2f5;
+            --card-bg: #ffffff;
+            --text: #2b2d42;
+        }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        
+        header { text-align: center; margin-bottom: 15px; }
+        header h1 { color: var(--primary); font-size: 1.8rem; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+        header p { font-size: 0.9rem; color: #6c757d; }
 
-    body {
-      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-      color: var(--dark);
-      min-height: 100vh;
-      padding-bottom: 40px;
-    }
+        .app-container { width: 100%; max-width: 500px; background: var(--card-bg); padding: 20px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
+        
+        .preview-area { width: 100%; aspect-ratio: 1; background: #e9ecef; border-radius: 15px; overflow: hidden; position: relative; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
+        canvas { width: 100%; height: 100%; object-fit: contain; }
 
-    header {
-      background: linear-gradient(135deg, var(--primary), #ff8e8e);
-      color: white;
-      text-align: center;
-      padding: 20px 15px;
-      border-bottom-left-radius: var(--radius);
-      border-bottom-right-radius: var(--radius);
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
-    }
+        .controls { display: flex; flex-direction: column; gap: 12px; }
+        .row { display: flex; gap: 10px; }
+        
+        label, button { display: flex; align-items: center; justify-content: center; padding: 12px; border-radius: 12px; border: none; font-weight: bold; font-size: 0.95rem; cursor: pointer; transition: all 0.2s ease; flex: 1; text-align: center; }
+        
+        .btn-upload { background: var(--secondary); color: white; }
+        .btn-action { background: var(--primary); color: white; }
+        .btn-secondary { background: #4a4e69; color: white; }
+        button:active, label:active { transform: scale(0.98); opacity: 0.9; }
 
-    header h1 {
-      font-size: 1.8rem;
-      margin-bottom: 5px;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
-    }
+        select, input[type="number"] { width: 100%; padding: 12px; border-radius: 12px; border: 2px solid #ddd; font-size: 0.95rem; outline: none; background: #fff; }
+        select:focus, input:focus { border-color: var(--primary); }
 
-    .container {
-      width: 92%;
-      max-width: 500px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
+        .audio-section { background: #f8f9fa; padding: 12px; border-radius: 12px; border: 1px dashed #ccc; margin-top: 5px; }
+        .audio-section h3 { font-size: 0.9rem; margin-bottom: 8px; color: #495057; }
 
-    .card {
-      background: white;
-      padding: 15px;
-      border-radius: var(--radius);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.06);
-    }
-
-    .card-title {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 12px;
-      color: #555;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    /* Form Elements */
-    label {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 0.85rem;
-      font-weight: bold;
-    }
-
-    select, input[type="number"] {
-      width: 100%;
-      padding: 10px;
-      border: 2px solid #e0e0e0;
-      border-radius: 8px;
-      font-size: 0.95rem;
-      margin-bottom: 12px;
-      background-color: var(--light);
-      outline: none;
-      transition: border-color 0.2s;
-    }
-
-    select:focus {
-      border-color: var(--secondary);
-    }
-
-    /* Media Inputs Custom */
-    .file-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-
-    .file-btn {
-      background: var(--light);
-      border: 2px dashed var(--secondary);
-      padding: 12px;
-      text-align: center;
-      border-radius: 10px;
-      cursor: pointer;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: var(--dark);
-      transition: all 0.2s;
-    }
-
-    .file-btn:active {
-      transform: scale(0.97);
-    }
-
-    /* Collage Canvas Container */
-    #canvas-container {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 1 / 1;
-      background: #eef2f3;
-      border-radius: var(--radius);
-      overflow: hidden;
-      box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
-    }
-
-    canvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-
-    /* Style Presets */
-    .style-row {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      padding-bottom: 5px;
-      margin-bottom: 10px;
-    }
-
-    .style-chip {
-      background: #eee;
-      padding: 6px 14px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      white-space: nowrap;
-      cursor: pointer;
-      font-weight: 500;
-    }
-
-    .style-chip.active {
-      background: var(--primary);
-      color: white;
-    }
-
-    /* Actions Buttons */
-    .btn {
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 10px;
-      font-size: 1rem;
-      font-weight: bold;
-      cursor: pointer;
-      color: white;
-      transition: transform 0.1s, opacity 0.2s;
-      margin-bottom: 8px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .btn:active { transform: scale(0.98); }
-    .btn-primary { background: var(--primary); }
-    .btn-secondary { background: var(--secondary); }
-    
-    /* Custom Modal */
-    .modal-overlay {
-      position: fixed;
-      top:0; left:0; right:0; bottom:0;
-      background: rgba(0,0,0,0.6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.3s;
-      padding: 20px;
-    }
-    .modal-overlay.active {
-      opacity: 1;
-      pointer-events: auto;
-    }
-    .modal {
-      background: white;
-      padding: 20px;
-      border-radius: var(--radius);
-      width: 100%;
-      max-width: 400px;
-      text-align: center;
-      transform: translateY(20px);
-      transition: transform 0.3s;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    }
-    .modal-overlay.active .modal {
-      transform: translateY(0);
-    }
-    .modal-title {
-      font-size: 1.2rem;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-    .modal-text {
-      font-size: 0.95rem;
-      color: #666;
-      margin-bottom: 20px;
-      line-height: 1.4;
-    }
-    
-    /* Loading Spinner */
-    .spinner {
-      border: 4px solid rgba(0,0,0,0.1);
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      border-left-color: white;
-      animation: spin 1s linear infinite;
-      display: inline-block;
-    }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    
-    /* Utility hidden inputs */
-    input[type="file"] { display: none; }
-  </style>
+        #status { text-align: center; font-size: 0.85rem; font-weight: bold; color: var(--primary); min-height: 20px; margin-top: 5px; }
+        input[type="file"] { display: none; }
+    </style>
 </head>
 <body>
 
-  <header>
-    <h1>🎨 LifeCraft 🎨</h1>
-    <p>Craft your beautiful life events into timeless collages and videos</p>
-  </header>
+    <header>
+        <h1>✨ LifeCraft Studio ✨</h1>
+        <p>Create Magic Memories in Seconds</p>
+    </header>
 
-  <div class="container">
-    
-    <div class="card">
-      <div class="card-title">📐 Theme & Layout Options</div>
-      
-      <label>Select Celebration Theme</label>
-      <select id="themeSelect">
-        <option value="birthday">🎉 Happy Birthday</option>
-        <option value="anniversary">❤️ Anniversary / Love</option>
-        <option value="travel">✈️ Travel Adventure</option>
-        <option value="generic">🌟 Elegant Minimalist</option>
-      </select>
+    <div class="app-container">
+        <div class="preview-area">
+            <canvas id="collageCanvas" width="800" height="800"></canvas>
+        </div>
 
-      <label>Choose Slice Grid Type</label>
-      <div class="style-row" id="layoutRow">
-        <div class="style-chip active" data-layout="grid">Standard Block</div>
-        <div class="style-chip" data-layout="diagonal">Diagonal Slices</div>
-        <div class="style-chip" data-layout="strips">Vertical Strips</div>
-        <div class="style-chip" data-layout="random">Abstract Mix</div>
-      </div>
+        <div id="status">Ready! Upload some photos.</div>
+
+        <div class="controls">
+            <div class="row">
+                <label class="btn-upload">
+                    📸 Add Photos
+                    <input type="file" id="imageInput" multiple accept="image/*">
+                </label>
+                <button class="btn-secondary" id="shuffleBtn">🎲 Shuffle Style</button>
+            </div>
+
+            <div class="row">
+                <select id="themeSelect">
+                    <option value="none">No Theme (Clean)</option>
+                    <option value="birthday">🎂 Happy Birthday</option>
+                    <option value="anniversary">❤️ Happy Anniversary</option>
+                    <option value="travel">✈️ Wanderlust / Travel</option>
+                    <option value="congrats">🎉 Congratulations</option>
+                </select>
+            </div>
+
+            <div class="row">
+                <button class="btn-action" id="downloadImgBtn">📥 Download Image</button>
+            </div>
+
+            <div class="audio-section">
+                <h3>🎵 Video Generator Options</h3>
+                <div class="row" style="margin-bottom: 8px;">
+                    <label class="btn-upload" style="background: #6c757d; font-size: 0.85rem; padding: 8px;">
+                        🎵 Choose Audio
+                        <input type="file" id="audioInput" accept="audio/*">
+                    </label>
+                    <div style="flex: 1; display: flex; align-items: center; gap: 5px;">
+                        <input type="number" id="durationInput" value="5" min="3" max="30" style="padding: 8px;">
+                        <span style="font-size: 0.85rem;">Secs</span>
+                    </div>
+                </div>
+                <button class="btn-action" id="downloadVidBtn" style="background: #2a9d8f;">🎥 Export as MP4 Video</button>
+            </div>
+        </div>
     </div>
 
-    <div class="card">
-      <div class="card-title">📸 Import Your Media</div>
-      <div class="file-grid">
-        <label class="file-btn" for="photoCam">
-          📸 Camera Capture
-        </label>
-        <label class="file-btn" for="photoGal">
-          🖼️ Device Gallery
-        </label>
-      </div>
-      <input type="file" id="photoCam" accept="image/*" capture="environment" multiple>
-      <input type="file" id="photoGal" accept="image/*" multiple>
-      
-      <label class="file-btn" style="border-color: var(--primary); color: var(--primary);" for="audioInput">
-        🎵 Optional Background Audio (.mp3)
-      </label>
-      <input type="file" id="audioInput" accept="audio/mp3">
-      <div id="audioStatus" style="font-size:0.8rem; text-align:center; color:#777; margin-top:-5px;">No track loaded</div>
-    </div>
+    <script>
+        const canvas = document.getElementById('collageCanvas');
+        const ctx = canvas.getContext('2d');
+        const imageInput = document.getElementById('imageInput');
+        const themeSelect = document.getElementById('themeSelect');
+        const shuffleBtn = document.getElementById('shuffleBtn');
+        const downloadImgBtn = document.getElementById('downloadImgBtn');
+        const audioInput = document.getElementById('audioInput');
+        const durationInput = document.getElementById('durationInput');
+        const downloadVidBtn = document.getElementById('downloadVidBtn');
+        const statusText = document.getElementById('status');
 
-    <div class="card">
-      <div class="card-title">👁️ Live Preview</div>
-      <div id="canvas-container">
-        <canvas id="collageCanvas" width="1080" height="1080"></canvas>
-      </div>
-    </div>
+        let loadedImages = [];
+        let currentLayout = 'grid'; // grid, scattered, rows
 
-    <div class="card">
-      <div class="card-title">💾 Output Engine</div>
-      
-      <label>Video Length (Seconds - only applies to MP4 video rendering)</label>
-      <input type="number" id="videoDuration" value="5" min="2" max="30">
-
-      <button class="btn btn-secondary" id="downloadImgBtn">📥 Download High-Res Image (PNG)</button>
-      <button class="btn btn-primary" id="downloadVidBtn">🎥 Render & Download Video (MP4)</button>
-    </div>
-
-  </div>
-
-  <div class="modal-overlay" id="customModal">
-    <div class="modal">
-      <div class="modal-title" id="modalTitle">Notification</div>
-      <div class="modal-text" id="modalBody">Message goes here.</div>
-      <button class="btn btn-secondary" style="margin:0;" onclick="closeModal()">Awesome</button>
-    </div>
-  </div>
-
-  <script>
-    // Register PWA Service Worker
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./sw.js').catch(err => console.log(err));
-      });
-    }
-
-    // App State Configuration Variables
-    const canvas = document.getElementById('collageCanvas');
-    const ctx = canvas.getContext('2d');
-    let loadedImages = [];
-    let currentTheme = 'birthday';
-    let currentLayout = 'grid';
-    let userAudioBuffer = null;
-    let audioContext = null;
-
-    // Theme Custom CSS Configurations & Stickers Assets Frameworks
-    const themes = {
-      birthday: {
-        bg: '#FFF0F5',
-        gradient: ['#FF6B6B', '#FFE66D'],
-        decor: '✨ 🎉 HAPPY BIRTHDAY 🎂 🎈 ✨',
-        textColor: '#D81B60'
-      },
-      anniversary: {
-        bg: '#FFF0F2',
-        gradient: ['#ff4e50', '#f9d423'],
-        decor: '❤️ Happy Anniversary Always & Forever ❤️',
-        textColor: '#B71C1C'
-      },
-      travel: {
-        bg: '#E0F7FA',
-        gradient: ['#4ECDC4', '#556270'],
-        decor: '✈️ WANDERLUST • DISCOVER • EXPLORE 🗺️',
-        textColor: '#006064'
-      },
-      generic: {
-        bg: '#F7FFF7',
-        gradient: ['#2F3E46', '#3A6073'],
-        decor: '🌟 LIFE MOMENTS MEMORY COLLECTOR 🌟',
-        textColor: '#2F3E46'
-      }
-    };
-
-    // Modal Manager
-    function showModal(title, text) {
-      document.getElementById('modalTitle').innerText = title;
-      document.getElementById('modalBody').innerText = text;
-      document.getElementById('customModal').classList.add('active');
-    }
-    function closeModal() {
-      document.getElementById('customModal').classList.remove('active');
-    }
-
-    // Trigger Processing Elements Pipeline
-    document.getElementById('themeSelect').addEventListener('change', (e) => {
-      currentTheme = e.target.value;
-      renderCollage();
-    });
-
-    document.getElementById('layoutRow').addEventListener('click', (e) => {
-      if(e.target.classList.contains('style-chip')) {
-        document.querySelectorAll('.style-chip').forEach(c => c.classList.remove('active'));
-        e.target.classList.add('active');
-        currentLayout = e.target.dataset.layout;
-        renderCollage();
-      }
-    });
-
-    // SAFE FILE INPUT HANDLER: Updates preview progressively and handles errors safely
-    const loadFiles = (e) => {
-      const files = e.target.files;
-      if(!files.length) return;
-
-      let itemsProcessed = 0;
-      let successfulLoads = 0;
-      loadedImages = []; 
-
-      for(let i=0; i < files.length; i++) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const img = new Image();
-          img.onload = () => {
-            loadedImages.push(img);
-            successfulLoads++;
-            itemsProcessed++;
-            
-            // Progressive render so user sees changes immediately
-            renderCollage(); 
-            
-            if(itemsProcessed === files.length) {
-              showModal('Success 🎉', `${successfulLoads} images loaded successfully into LifeCraft!`);
-            }
-          };
-          
-          img.onerror = () => {
-            itemsProcessed++;
-            if(itemsProcessed === files.length) {
-              renderCollage();
-              showModal('Notice ⚠️', 'Some images could not be read. Showing successfully loaded images.');
-            }
-          };
-          img.src = event.target.result;
+        // Theme Definitions
+        const themes = {
+            none: { bg: '#ffffff', text: '', emoji: '' },
+            birthday: { bg: '#fff0f3', text: 'HAPPY BIRTHDAY 🎉', color: '#ff477e', secondary: '#ffb3c1' },
+            anniversary: { bg: '#fff0f5', text: 'HAPPY ANNIVERSARY ❤️', color: '#d90429', secondary: '#ffb3c1' },
+            travel: { bg: '#e0f1f4', text: 'EXPLORE THE WORLD ✈️', color: '#0077b6', secondary: '#90e0ef' },
+            congrats: { bg: '#fdf0d5', text: 'CONGRATULATIONS 🌟', color: '#7209b7', secondary: '#f72585' }
         };
-        reader.readAsDataURL(files[i]);
-      }
-    };
 
-    document.getElementById('photoCam').addEventListener('change', loadFiles);
-    document.getElementById('photoGal').addEventListener('change', loadFiles);
-
-    // Audio input binary data extractor mapping
-    document.getElementById('audioInput').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        document.getElementById('audioStatus').innerText = `Loaded: ${file.name.substring(0, 20)}...`;
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-          try {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            audioContext.decodeAudioData(evt.target.result, (buffer) => {
-              userAudioBuffer = buffer;
-              showModal('Music Ready 🎵', 'Audio track successfully attached to LifeCraft MP4 generator.');
-            }, (err) => {
-              showModal('Audio Error ❌', 'Failed to decode audio file. Try using a standard MP3.');
+        // Handle Image Uploads
+        imageInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            loadedImages = [];
+            statusText.innerText = "Loading images...";
+            
+            let loadedCount = 0;
+            files.forEach(file => {
+                const img = new Image();
+                img.src = URL.createObjectURL(file);
+                img.onload = () => {
+                    loadedImages.push(img);
+                    loadedCount++;
+                    if (loadedCount === files.length) {
+                        statusText.innerText = `${loadedImages.length} image(s) loaded!`;
+                        drawCollage();
+                    }
+                };
             });
-          } catch(err) {
-            showModal('Error ❌', 'Web Audio API is restricted or unsupported on this mobile browser.');
-          }
+        });
+
+        // Trigger Redraws
+        themeSelect.addEventListener('change', drawCollage);
+        shuffleBtn.addEventListener('change', drawCollage);
+        shuffleBtn.onclick = () => {
+            const layouts = ['grid', 'scattered', 'rows'];
+            currentLayout = layouts[Math.floor(Math.random() * layouts.length)];
+            statusText.innerText = `Switched to ${currentLayout} layout!`;
+            drawCollage();
         };
-        reader.readAsArrayBuffer(file);
-      }
-    });
 
-    // Core Canvas Generative Drawing Logic
-    function renderCollage() {
-      try {
-        const activeTheme = themes[currentTheme] || themes.generic;
-        
-        // Clean frame canvas buffer structure
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // Draw Theme Border Background Architecture Frame
-        ctx.fillStyle = activeTheme.bg;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Main Drawing Function
+        function drawCollage() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const theme = themes[themeSelect.value] || themes.none;
+            
+            // Draw background
+            ctx.fillStyle = theme.bg;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        const margin = 60;
-        const innerW = canvas.width - (margin * 2);
-        const innerH = canvas.height - (margin * 2 - 20);
+            if (loadedImages.length === 0) {
+                // Placeholder if no images
+                ctx.fillStyle = "#888";
+                ctx.font = "30px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText("Tap 'Add Photos' to Start", canvas.width/2, canvas.height/2);
+                return;
+            }
 
-        if(loadedImages.length === 0) {
-          ctx.fillStyle = "#888888";
-          ctx.font = "italic 32px Arial";
-          ctx.textAlign = "center";
-          ctx.fillText("📸 Tap above to import photos from your device", canvas.width/2, canvas.height/2);
-          drawDecorations(activeTheme);
-          return;
+            // Draw Photo Layouts
+            if (currentLayout === 'grid' || loadedImages.length === 1) {
+                let cols = Math.ceil(Math.sqrt(loadedImages.length));
+                let rows = Math.ceil(loadedImages.length / cols);
+                let w = canvas.width / cols;
+                let h = (canvas.height - 100) / rows; // Leave space for text banner
+
+                loadedImages.forEach((img, i) => {
+                    let col = i % cols;
+                    let row = Math.floor(i / cols);
+                    ctx.drawImage(img, col * w + 10, row * h + 20, w - 20, h - 20);
+                });
+            } else if (currentLayout === 'rows') {
+                let h = (canvas.height - 120) / loadedImages.length;
+                loadedImages.forEach((img, i) => {
+                    ctx.drawImage(img, 20, (i * h) + 20, canvas.width - 40, h - 20);
+                });
+            } else if (currentLayout === 'scattered') {
+                loadedImages.forEach((img) => {
+                    ctx.save();
+                    let cx = Math.random() * (canvas.width - 300) + 150;
+                    let cy = Math.random() * (canvas.height - 400) + 150;
+                    let angle = (Math.random() - 0.5) * 0.4; // slight tilt
+                    ctx.translate(cx, cy);
+                    ctx.rotate(angle);
+                    // Draw polaroid border
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(-120, -120, 240, 270);
+                    ctx.shadowColor = 'rgba(0,0,0,0.2)';
+                    ctx.shadowBlur = 10;
+                    ctx.drawImage(img, -110, -110, 220, 220);
+                    ctx.restore();
+                });
+            }
+
+            // Draw Theme Text Overlay
+            if (theme.text) {
+                ctx.fillStyle = theme.color;
+                ctx.fillRect(0, canvas.height - 90, canvas.width, 90);
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 36px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(theme.text, canvas.width / 2, canvas.height - 45);
+            }
         }
 
-        ctx.save();
-        let clipPath = new Path2D();
-        clipPath.rect(margin, margin, innerW, innerH);
-        ctx.clip(clipPath);
+        // Download Image File
+        downloadImgBtn.onclick = () => {
+            if(loadedImages.length === 0) return alert("Please add images first!");
+            const link = document.createElement('a');
+            link.download = 'collage.jpg';
+            link.href = canvas.toDataURL('image/jpeg', 0.9);
+            link.click();
+        };
 
-        // Render Layout Strategies
-        if (currentLayout === 'grid') {
-          renderGridLayout(innerW, innerH, margin);
-        } else if (currentLayout === 'strips') {
-          renderStripsLayout(innerW, innerH, margin);
-        } else if (currentLayout === 'diagonal') {
-          renderDiagonalLayout(innerW, innerH, margin);
-        } else {
-          renderRandomLayout(innerW, innerH, margin);
+        // Render to MP4 Video with Audio
+        downloadVidBtn.onclick = async () => {
+            if(loadedImages.length === 0) return alert("Please add images first!");
+            if(!audioInput.files[0]) return alert("Please select a music file first!");
+
+            statusText.innerText = "Processing Video... Please wait.";
+            const duration = parseInt(durationInput.value) || 5;
+            
+            // Audio Context setup
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const fileReader = new FileReader();
+            
+            fileReader.onload = async (e) => {
+                const audioBuffer = await audioCtx.decodeAudioData(e.target.result);
+                const source = audioCtx.createBufferSource();
+                source.buffer = audioBuffer;
+                
+                const dest = audioCtx.createMediaStreamDestination();
+                source.connect(dest);
+                
+                // Capture Canvas Stream
+                const canvasStream = canvas.captureStream(25); // 25 FPS
+                // Combine audio track and video track
+                const combinedStream = new MediaStream([
+                    ...canvasStream.getVideoTracks(),
+                    ...dest.stream.getAudioTracks()
+                ]);
+
+                const mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm;codecs=vp9' });
+                const chunks = [];
+
+                mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: 'video/mp4' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'collage_video.mp4';
+                    a.click();
+                    statusText.innerText = "Video Downloaded Successfully!";
+                    source.stop();
+                };
+
+                // Start recording
+                mediaRecorder.start();
+                source.start(0);
+
+                // Simulate slight animation shifts during recording to keep video active
+                let startTime = Date.now();
+                let interval = setInterval(() => {
+                    if (currentLayout === 'scattered') drawCollage(); // Re-shuffles elements subtly
+                    if (Date.now() - startTime > duration * 1000) {
+                        clearInterval(interval);
+                        mediaRecorder.stop();
+                    }
+                }, 100);
+            };
+
+            fileReader.readAsArrayBuffer(audioInput.files[0]);
+        };
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+                .then(() => console.log('Service Worker Active'));
         }
-
-        ctx.restore();
-        drawDecorations(activeTheme);
-      } catch (error) {
-        console.error("Canvas Render Error: ", error);
-      }
-    }
-
-    // Dynamic Image Cover Crop Vector Calculator Utility Function Matrix alignment wrapper 
-    function drawImageCover(img, sx, sy, sw, sh) {
-      if (!img || !img.width) return;
-      const imgRatio = img.width / img.height;
-      const targetRatio = sw / sh;
-      let dx, dy, dw, dh;
-
-      if(imgRatio > targetRatio) {
-        dh = img.height;
-        dw = img.height * targetRatio;
-        dx = (img.width - dw) / 2;
-        dy = 0;
-      } else {
-        dw = img.width;
-        dh = img.width / targetRatio;
-        dx = 0;
-        dy = (img.height - dh) / 2;
-      }
-      ctx.drawImage(img, dx, dy, dw, dh, sx, sy, sw, sh);
-    }
-
-    /* Layout Subroutines */
-    function renderGridLayout(w, h, m) {
-      const count = loadedImages.length;
-      const cols = Math.ceil(Math.sqrt(count));
-      const rows = Math.ceil(count / cols);
-      const cw = w / cols;
-      const ch = h / rows;
-
-      let idx = 0;
-      for(let r=0; r<rows; r++) {
-        for(let c=0; c<cols; c++) {
-          if(idx >= count) break;
-          drawImageCover(loadedImages[idx], m + (c*cw), m + (r*ch), cw - 4, ch - 4);
-          idx++;
-        }
-      }
-    }
-
-    function renderStripsLayout(w, h, m) {
-      const count = loadedImages.length;
-      const cw = w / count;
-      for(let i=0; i<count; i++) {
-        drawImageCover(loadedImages[i], m + (i*cw), m, cw - 4, h);
-      }
-    }
-
-    function renderDiagonalLayout(w, h, m) {
-      const count = loadedImages.length;
-      const segmentWidth = w / count;
-
-      for (let i = 0; i < count; i++) {
-        ctx.save();
-        let path = new Path2D();
-        if(i === 0) {
-          path.moveTo(m, m);
-          path.lineTo(m + segmentWidth + 50, m);
-          path.lineTo(m + segmentWidth - 50, m + h);
-          path.lineTo(m, m + h);
-        } else if (i === count - 1) {
-          path.moveTo(m + (i*segmentWidth) - 50, m);
-          path.lineTo(m + w, m);
-          path.lineTo(m + w, m + h);
-          path.lineTo(m + (i*segmentWidth) + 50, m + h);
-        } else {
-          path.moveTo(m + (i*segmentWidth) - 50, m);
-          path.lineTo(m + ((i+1)*segmentWidth) + 50, m);
-          path.lineTo(m + ((i+1)*segmentWidth) - 50, m + h);
-          path.lineTo(m + (i*segmentWidth) + 50, m + h);
-        }
-        path.closePath();
-        ctx.clip(path);
-        
-        drawImageCover(loadedImages[i], m + (i*segmentWidth) - 50, m, segmentWidth + 100, h);
-        ctx.restore();
-      }
-    }
-
-    function renderRandomLayout(w, h, m) {
-      const count = loadedImages.length;
-      if(count === 1) {
-        drawImageCover(loadedImages[0], m, m, w, h);
-        return;
-      }
-      
-      const midX = w / 2;
-      const midY = h / 2;
-
-      const points = [
-        [0, 0, midX, midY],
-        [midX, 0, midX, midY],
-        [0, midY, midX, midY],
-        [midX, midY, midX, midY]
-      ];
-
-      for(let i=0; i < Math.min(count, 4); i++) {
-        let pts = points[i];
-        drawImageCover(loadedImages[i], m + pts[0], m + pts[1], pts[2], pts[3]);
-      }
-
-      if(count > 4) {
-        for(let i=4; i<count; i++) {
-          let size = 250;
-          ctx.save();
-          ctx.shadowColor = 'rgba(0,0,0,0.3)';
-          ctx.shadowBlur = 15;
-          ctx.translate(m + (w/2), m + (h/2));
-          ctx.rotate((i * 15) * Math.PI / 180);
-          drawImageCover(loadedImages[i], -size/2, -size/2, size, size);
-          ctx.strokeStyle = "white";
-          ctx.lineWidth = 8;
-          ctx.strokeRect(-size/2, -size/2, size, size);
-          ctx.restore();
-        }
-      }
-    }
-
-    function drawDecorations(theme) {
-      ctx.fillStyle = theme.textColor;
-      ctx.font = "bold 32px Arial";
-      ctx.textAlign = "center";
-      ctx.fillText(theme.decor, canvas.width / 2, 42);
-      ctx.fillText(theme.decor, canvas.width / 2, canvas.height - 20);
-    }
-
-    // Capture Image File Stream Downloader Action Pipeline
-    document.getElementById('downloadImgBtn').addEventListener('click', () => {
-      if(loadedImages.length === 0) {
-        showModal('Error ❌', 'Please import files into the grid before requesting download triggers.');
-        return;
-      }
-      const link = document.createElement('a');
-      link.download = `LifeCraft_${currentTheme}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    });
-
-    // Advanced MediaStream MP4 Video Assembler Engine Logic Pipeline Integration Framework
-    document.getElementById('downloadVidBtn').addEventListener('click', async () => {
-      if(loadedImages.length === 0) {
-        showModal('Error ❌', 'Cannot generate an MP4 video tracking layer with empty visual states.');
-        return;
-      }
-
-      if (typeof canvas.captureStream !== "function") {
-        showModal('Unsupported Browser ❌', 'Your mobile browser does not support live canvas video streaming exports.');
-        return;
-      }
-
-      const durationSec = parseInt(document.getElementById('videoDuration').value) || 5;
-      const fps = 25;
-      const totalFrames = durationSec * fps;
-      
-      const origBtnText = document.getElementById('downloadVidBtn').innerHTML;
-      document.getElementById('downloadVidBtn').innerHTML = `<span class="spinner"></span> Rendering Video...`;
-      document.getElementById('downloadVidBtn').disabled = true;
-
-      const stream = canvas.captureStr
+    </script>
+</body>
+</html>
