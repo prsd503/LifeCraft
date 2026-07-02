@@ -4,11 +4,35 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>LifeCraft - Collage & Video Creator</title>
-  <link rel="manifest" href="manifest.json">
-  <!-- Google Fonts for stylish event options -->
+  
+  <!-- 1. LIVE ERROR TRACKING HEADSCRIPT -->
+  <script>
+    window.addEventListener('error', function(e) {
+      const debugBox = document.getElementById('runtimeDebugLog');
+      if (debugBox) {
+        debugBox.style.display = 'block';
+        const target = e.target || e.srcElement;
+        if (target && (target.tagName === 'SCRIPT' || target.tagName === 'LINK')) {
+          debugBox.innerHTML += `<div>❌ <b>Resource Blocked:</b> Failed to load library from: <br><small>${target.src || target.href}</small></div>`;
+        } else {
+          debugBox.innerHTML += `<div>❌ <b>Script Bug:</b> ${e.message}<br><small>at ${e.filename || 'unknown'}:${e.lineno || 0}</small></div>`;
+        }
+      }
+    }, true); 
+
+    window.addEventListener('unhandledrejection', function(e) {
+      const debugBox = document.getElementById('runtimeDebugLog');
+      if (debugBox) {
+        debugBox.style.display = 'block';
+        debugBox.innerHTML += `<div>⚠️ <b>Promise Failure:</b> ${e.reason}</div>`;
+      }
+    });
+  </script>
+
+  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght=700&family=Cinzel:wght=700&family=Fredoka+One&family=Montserrat:wght=700&display=swap" rel="stylesheet">
   
-  <!-- 🔥 CRITICAL FIX: FORCED SECURE HTTPS LINK FOR FABRIC.JS TO PREVENT GITHUB PAGES FROM BLOCKING IT -->
+  <!-- SECURE HTTPS CDN FOR FABRIC.JS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
 
   <style>
@@ -17,7 +41,6 @@
       --secondary: #4ECDC4;
       --accent: #FFE66D;
       --dark: #2F2F2F;
-      --light: #F7FFF7;
     }
 
     * {
@@ -25,7 +48,6 @@
       margin: 0;
       padding: 0;
       font-family: 'Segoe UI', Roboto, sans-serif;
-      -webkit-tap-highlight-color: transparent;
     }
 
     body {
@@ -40,14 +62,19 @@
       color: white;
       padding: 15px;
       text-align: center;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      border-bottom-left-radius: 20px;
-      border-bottom-right-radius: 20px;
     }
 
-    header h1 {
-      font-size: 1.8rem;
-      letter-spacing: 1px;
+    #runtimeDebugLog {
+      background: #fff3e0;
+      color: #e65100;
+      border: 3px solid #ffb74d;
+      padding: 15px;
+      margin: 15px auto;
+      max-width: 470px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 0.9rem;
+      display: block;
     }
 
     .container {
@@ -67,20 +94,26 @@
     h3 {
       margin-bottom: 12px;
       font-size: 1.1rem;
-      color: var(--dark);
       border-left: 4px solid var(--primary);
       padding-left: 8px;
     }
 
     .canvas-container-wrapper {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: #eef1f6;
+      display: block;
+      width: 360px !important;
+      height: 360px !important;
+      margin: 0 auto 15px auto;
+      background: #ffffff;
       border-radius: 12px;
       overflow: hidden;
-      margin-bottom: 15px;
       border: 3px dashed var(--secondary);
+      position: relative;
+    }
+
+    .canvas-container {
+      width: 360px !important;
+      height: 360px !important;
+      margin: 0 auto;
     }
 
     .control-group {
@@ -92,7 +125,6 @@
       font-weight: 600;
       margin-bottom: 6px;
       font-size: 0.9rem;
-      color: #555;
     }
 
     select, input[type="text"], input[type="number"] {
@@ -100,12 +132,6 @@
       padding: 10px;
       border: 2px solid #e0e0e0;
       border-radius: 8px;
-      font-size: 0.95rem;
-      outline: none;
-    }
-
-    select:focus, input:focus {
-      border-color: var(--secondary);
     }
 
     .grid-buttons {
@@ -122,35 +148,17 @@
       padding: 12px 15px;
       border-radius: 10px;
       font-weight: bold;
-      font-size: 0.95rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
 
-    .btn:active {
-      transform: scale(0.98);
-    }
-
-    .btn-secondary {
-      background: var(--secondary);
-    }
-
-    .btn-accent {
-      background: #ffb900;
-      color: var(--dark);
-    }
-
-    .btn-danger {
-      background: #e74c3c;
-    }
-
-    .hidden-input {
-      display: none;
-    }
+    .btn-secondary { background: var(--secondary); }
+    .btn-accent { background: #ffb900; color: var(--dark); }
+    .btn-danger { background: #e74c3c; }
+    .hidden-input { display: none; }
 
     .transform-controls {
       background: #f9f9f9;
@@ -158,7 +166,6 @@
       border-radius: 10px;
       margin-top: 10px;
       display: none;
-      border: 1px solid #e0e0e0;
     }
 
     .range-flex {
@@ -168,9 +175,7 @@
       margin-bottom: 8px;
     }
 
-    .range-flex input {
-      flex: 1;
-    }
+    .range-flex input { flex: 1; }
 
     .text-format-bar {
       display: flex;
@@ -179,11 +184,7 @@
       margin-top: 8px;
     }
 
-    .text-format-bar select {
-      flex: 1;
-      min-width: 120px;
-      height: 40px;
-    }
+    .text-format-bar select { flex: 1; min-width: 120px; }
 
     .color-picker-wrapper {
       display: flex;
@@ -195,9 +196,6 @@
     .color-picker-wrapper input[type="color"] {
       width: 100%;
       height: 40px;
-      padding: 2px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
       cursor: pointer;
     }
 
@@ -206,15 +204,18 @@
       font-size: 0.9rem;
       font-weight: 600;
       color: var(--primary);
-      min-height: 20px;
     }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>😎 LifeCraft 😀</h1>
+    <h1>🎨 LifeCraft</h1>
   </header>
+
+  <div id="runtimeDebugLog">
+    ⚙️ <b>System Diagnostics Panel:</b> Waiting for page lifecycle load...
+  </div>
 
   <div class="container">
     <div class="card">
@@ -234,7 +235,7 @@
           <span>🔍 Size</span>
           <input type="range" id="scaleSlider" min="0.1" max="2" step="0.05" value="1">
         </div>
-        <button class="btn btn-danger" style="padding:6px 12px; font-size:0.85rem; width: 100%;" onclick="deleteSelectedObj()">🗑️ Remove This Photo</button>
+        <button class="btn btn-danger" style="width: 100%;" onclick="deleteSelectedObj()">🗑️ Remove Photo</button>
       </div>
     </div>
 
@@ -272,33 +273,32 @@
         <input type="text" id="customText" placeholder="Type custom message here..." oninput="updateCustomText()">
         
         <div class="text-format-bar">
-          <div class="color-picker-wrapper" title="Text Color">
-            <label style="font-size:0.75rem; margin:0;">Text:</label>
+          <div class="color-picker-wrapper">
+            <label style="font-size:0.75rem;">Text:</label>
             <input type="color" id="textColor" value="#ffffff" onchange="updateCustomText()">
           </div>
-
-          <div class="color-picker-wrapper" title="Banner Background Color">
-            <label style="font-size:0.75rem; margin:0;">Bg Banner:</label>
+          <div class="color-picker-wrapper">
+            <label style="font-size:0.75rem;">Bg:</label>
             <input type="color" id="textBgColor" value="#ff4a75" onchange="updateCustomText()">
           </div>
           
           <select id="fontStyle" onchange="updateCustomText()">
-            <option value="Montserrat">Montserrat (Modern Bold)</option>
-            <option value="Arial">Arial (Clean)</option>
-            <option value="Cinzel">Cinzel (Elegant)</option>
-            <option value="Caveat">Caveat (Handwriting)</option>
-            <option value="Fredoka One">Fredoka (Playful)</option>
+            <option value="Montserrat">Montserrat</option>
+            <option value="Arial">Arial</option>
+            <option value="Cinzel">Cinzel</option>
+            <option value="Caveat">Caveat</option>
+            <option value="Fredoka One">Fredoka</option>
           </select>
-
           <select id="textAlignment" onchange="updateCustomText()">
-            <option value="center">Align Center</option>
-            <option value="left">Align Left</option>
-            <option value="right">Align Right</option>
+            <option value="center">Center</option>
+            <option value="left">Left</option>
+            <option value="right">Right</option>
           </select>
         </div>
       </div>
     </div>
 
+    <!-- VIDEO ANIMATION CONTAINER CARD -->
     <div class="card">
       <h3>🎞️ Video & Animation Exporter</h3>
       
@@ -338,22 +338,6 @@
     let selectedAudioBuffer = null;
     let audioContext = null;
 
-    // 🔥 INITIALIZATION GUARD: Ensures Dom structure parses cleanly before Fabric maps elements
-    window.addEventListener('DOMContentLoaded', () => {
-      canvas = new fabric.Canvas('collageCanvas', {
-        backgroundColor: '#ffffff',
-        preserveObjectStacking: true
-      });
-      
-      canvas.calcOffset();
-
-      canvas.on('selection:created', onObjectSelected);
-      canvas.on('selection:updated', onObjectSelected);
-      canvas.on('selection:cleared', () => {
-        document.getElementById('transformControls').style.display = 'none';
-      });
-    });
-
     function onObjectSelected(e) {
       if (e.target && e.target.type === 'image') {
         document.getElementById('transformControls').style.display = 'block';
@@ -363,18 +347,6 @@
         document.getElementById('transformControls').style.display = 'none';
       }
     }
-
-    document.getElementById('angleSlider').addEventListener('input', function() {
-      if(!canvas) return;
-      let active = canvas.getActiveObject();
-      if (active) { active.set('angle', parseInt(this.value)).setCoords(); canvas.renderAll(); }
-    });
-
-    document.getElementById('scaleSlider').addEventListener('input', function() {
-      if(!canvas) return;
-      let active = canvas.getActiveObject();
-      if (active) { active.scale(parseFloat(this.value)).setCoords(); canvas.renderAll(); }
-    });
 
     function deleteSelectedObj() {
       if(!canvas) return;
@@ -389,22 +361,28 @@
     }
 
     function clearAllImages() {
-      if (!canvas || uploadedImages.length === 0) return;
-      uploadedImages.forEach(img => canvas.remove(img));
+      if (!canvas) return;
+      canvas.clear();
+      canvas.setBackgroundColor('#ffffff', canvas.renderAll.bind(canvas));
       uploadedImages = [];
-      canvas.discardActiveObject();
-      canvas.renderAll();
-      document.getElementById('statusLog').innerText = "Cleared all photos from layout!";
+      textObject = null;
+      borderFrame = null;
+      document.getElementById('statusLog').innerText = "Cleared all photos!";
     }
 
+    // BULLETPROOF SECURE MOBILE IMAGE LOADER
     function handleImageFiles(files) {
       if(!canvas || !files.length) return;
+      document.getElementById('statusLog').innerText = "Processing media layers...";
       
       for (let i = 0; i < files.length; i++) {
         const reader = new FileReader();
         reader.onload = function(event) {
-          const imgElement = new Image();
-          imgElement.onload = function() {
+          fabric.util.loadImage(event.target.result, function(imgElement) {
+            if (!imgElement) {
+              document.getElementById('statusLog').innerText = "⚠️ Image decoding fault.";
+              return;
+            }
             const fabricImg = new fabric.Image(imgElement, {
               left: 40 + (uploadedImages.length * 30) % 140,
               top: 40 + (uploadedImages.length * 30) % 140,
@@ -416,47 +394,20 @@
             fabricImg.scaleToWidth(140);
             canvas.add(fabricImg);
             uploadedImages.push(fabricImg);
-            
             arrangeLayerOrder();
             canvas.renderAll();
-          };
-          imgElement.src = event.target.result;
+            document.getElementById('statusLog').innerText = "Photos successfully loaded!";
+          });
         };
         reader.readAsDataURL(files[i]);
       }
-      document.getElementById('statusLog').innerText = `Loaded ${files.length} photo(s).`;
     }
-
-    document.getElementById('cameraLoader').addEventListener('change', function(e) { handleImageFiles(e.target.files); });
-    document.getElementById('galleryLoader').addEventListener('change', function(e) { handleImageFiles(e.target.files); });
-
-    document.getElementById('audioLoader').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (file) {
-        document.getElementById('audioName').style.display = 'block';
-        document.getElementById('audioName').innerText = `🎵 Track: ${file.name.substring(0, 25)}`;
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-          audioContext = new (window.AudioContext || window.webkitAudioContext)();
-          audioContext.decodeAudioData(evt.target.result, function(buffer) {
-            selectedAudioBuffer = buffer;
-          });
-        };
-        reader.readAsArrayBuffer(file);
-      }
-    });
 
     function arrangeLayerOrder() {
       if(!canvas) return;
-      if (borderFrame) {
-        canvas.sendToBack(borderFrame);
-      }
-      uploadedImages.forEach(img => {
-        canvas.bringToFront(img);
-      });
-      if (textObject) {
-        canvas.bringToFront(textObject);
-      }
+      if (borderFrame) canvas.sendToBack(borderFrame);
+      uploadedImages.forEach(img => canvas.bringToFront(img));
+      if (textObject) canvas.bringToFront(textObject);
       canvas.renderAll();
     }
 
@@ -490,32 +441,28 @@
 
       switch(theme) {
         case 'birthday':
-          frameColor = '#FF6B6B';
-          frameStroke = 10;
+          frameColor = '#FF6B6B'; frameStroke = 10;
           canvas.setBackgroundColor('#FFF9E6', canvas.renderAll.bind(canvas));
           document.getElementById('customText').value = "HAPPY BIRTHDAY 🎉";
           document.getElementById('textBgColor').value = "#ff4a75";
           document.getElementById('textColor').value = "#ffffff";
           break;
         case 'anniversary':
-          frameColor = '#D4AF37';
-          frameStroke = 10;
+          frameColor = '#D4AF37'; frameStroke = 10;
           canvas.setBackgroundColor('#FFF0F5', canvas.renderAll.bind(canvas));
           document.getElementById('customText').value = "HAPPY ANNIVERSARY ❤️";
           document.getElementById('textBgColor').value = "#D4AF37";
           document.getElementById('textColor').value = "#ffffff";
           break;
         case 'vacation':
-          frameColor = '#4ECDC4';
-          frameStroke = 10;
+          frameColor = '#4ECDC4'; frameStroke = 10;
           canvas.setBackgroundColor('#E0F7FA', canvas.renderAll.bind(canvas));
           document.getElementById('customText').value = "VACATION MEMORIES 🌴";
           document.getElementById('textBgColor').value = "#4ECDC4";
           document.getElementById('textColor').value = "#ffffff";
           break;
         case 'graduation':
-          frameColor = '#2C3E50';
-          frameStroke = 10;
+          frameColor = '#2C3E50'; frameStroke = 10;
           canvas.setBackgroundColor('#ECEFF1', canvas.renderAll.bind(canvas));
           document.getElementById('customText').value = "CLASS OF 2026 🎓";
           document.getElementById('textBgColor').value = "#2C3E50";
@@ -528,19 +475,13 @@
 
       if (frameStroke > 0) {
         borderFrame = new fabric.Rect({
-          left: frameStroke/2,
-          top: frameStroke/2,
-          width: canvas.width - frameStroke,
-          height: canvas.height - frameStroke,
-          fill: 'transparent',
-          stroke: frameColor,
-          strokeWidth: frameStroke,
-          selectable: false,
-          evented: false
+          left: frameStroke/2, top: frameStroke/2,
+          width: canvas.width - frameStroke, height: canvas.height - frameStroke,
+          fill: 'transparent', stroke: frameColor, strokeWidth: frameStroke,
+          selectable: false, evented: false
         });
         canvas.add(borderFrame);
       }
-      
       updateCustomText();
     }
 
@@ -559,25 +500,13 @@
       }
 
       let textOptions = {
-        fill: colorVal,
-        textBackgroundColor: bgBarColorVal,
-        fontFamily: fontVal,
-        textAlign: alignVal,
-        fontSize: 20,
-        fontWeight: 'bold',
-        selectable: true
+        fill: colorVal, textBackgroundColor: bgBarColorVal, fontFamily: fontVal,
+        textAlign: alignVal, fontSize: 20, fontWeight: 'bold', selectable: true
       };
 
-      if (alignVal === 'left') {
-        textOptions.left = 20;
-        textOptions.originX = 'left';
-      } else if (alignVal === 'right') {
-        textOptions.left = canvas.width - 20;
-        textOptions.originX = 'right';
-      } else {
-        textOptions.left = canvas.width / 2;
-        textOptions.originX = 'center';
-      }
+      if (alignVal === 'left') { textOptions.left = 20; textOptions.originX = 'left'; }
+      else if (alignVal === 'right') { textOptions.left = canvas.width - 20; textOptions.originX = 'right'; }
+      else { textOptions.left = canvas.width / 2; textOptions.originX = 'center'; }
 
       if (textObject) {
         textObject.set(textOptions);
@@ -588,7 +517,6 @@
         textObject = new fabric.Text(textVal, textOptions);
         canvas.add(textObject);
       }
-      
       arrangeLayerOrder();
     }
 
@@ -604,7 +532,10 @@
     }
 
     async function exportAnimatedVideo() {
-      if(!canvas) return;
+      if(!canvas || uploadedImages.length === 0) {
+        alert("Please import at least one photo before generating video transformations.");
+        return;
+      }
       canvas.discardActiveObject();
       canvas.renderAll();
 
@@ -612,4 +543,174 @@
       const animStyle = document.getElementById('animationStyle').value;
       const fps = 25;
       const totalFrames = duration * fps;
-      c
+      const statusElement = document.getElementById('statusLog');
+      
+      statusElement.innerText = "Encoding canvas elements to video stream...";
+
+      const captureCanvas = document.getElementById('collageCanvas');
+      const stream = captureCanvas.captureStream(fps);
+      
+      let mediaRecorder;
+      let recordedChunks = [];
+      let audioDest = null;
+      let audioSource = null;
+
+      if (selectedAudioBuffer && audioContext) {
+        audioDest = audioContext.createMediaStreamDestination();
+        audioSource = audioContext.createBufferSource();
+        audioSource.buffer = selectedAudioBuffer;
+        audioSource.loop = true;
+        audioSource.connect(audioDest);
+        stream.addTrack(audioDest.stream.getAudioTracks()[0]);
+      }
+
+      let options = { mimeType: 'video/webm;codecs=vp9' };
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/webm;codecs=vp8' };
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/webm' };
+
+      try {
+        mediaRecorder = new MediaRecorder(stream, options);
+      } catch (err) {
+        statusElement.innerText = "Video encoding failure on this browser platform.";
+        return;
+      }
+
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+        const link = document.createElement('a');
+        link.download = 'lifecraft-video.mp4';
+        link.href = URL.createObjectURL(blob);
+        link.click();
+        statusElement.innerText = "✅ Video Download Complete!";
+        if (audioSource) { try { audioSource.stop(); } catch(e){} }
+        uploadedImages.forEach(img => img.set({ opacity: 1 }));
+        canvas.renderAll();
+      };
+
+      const initialPositions = uploadedImages.map(img => ({
+        obj: img, origScaleX: img.scaleX, origScaleY: img.scaleY, origAngle: img.angle
+      }));
+
+      mediaRecorder.start();
+      if (audioSource) audioSource.start(0);
+
+      let currentFrame = 0;
+
+      function renderFrameLoop() {
+        if (currentFrame >= totalFrames) {
+          mediaRecorder.stop();
+          return;
+        }
+
+        const progress = currentFrame / totalFrames;
+
+        initialPositions.forEach((item, index) => {
+          if (animStyle === 'pop') {
+            const triggerProgress = index / initialPositions.length;
+            if (progress >= triggerProgress) {
+              const localProgress = Math.min(1, (progress - triggerProgress) / (1 - triggerProgress) * 2);
+              item.obj.set({ opacity: 1, scaleX: item.origScaleX * localProgress, scaleY: item.origScaleY * localProgress });
+            } else {
+              item.obj.set({ opacity: 0 });
+            }
+          } 
+          else if (animStyle === 'fade') {
+            const fadeProgress = Math.min(1, progress * 2);
+            item.obj.set({ opacity: fadeProgress });
+          } 
+          else if (animStyle === 'spin') {
+            const spinProgress = Math.min(1, progress * 1.5);
+            item.obj.set({
+              opacity: spinProgress,
+              angle: item.origAngle + ((1 - spinProgress) * 180),
+              scaleX: item.origScaleX * spinProgress,
+              scaleY: item.origScaleY * spinProgress
+            });
+          }
+        });
+
+        canvas.renderAll();
+        currentFrame++;
+        statusElement.innerText = `Rendering Progress: ${Math.round(progress * 100)}%`;
+        requestAnimationFrame(renderFrameLoop);
+      }
+
+      uploadedImages.forEach(img => img.set({ opacity: 0 }));
+      canvas.renderAll();
+
+      setTimeout(renderFrameLoop, 300);
+    }
+
+    // MAIN LOAD INITIALIZER
+    window.addEventListener('load', () => {
+      const debugBox = document.getElementById('runtimeDebugLog');
+      try {
+        if (typeof fabric === 'undefined') {
+          throw new Error("Fabric.js script missing or broken from host connection link.");
+        }
+
+        canvas = new fabric.Canvas('collageCanvas', {
+          width: 360,
+          height: 360,
+          backgroundColor: '#ffffff',
+          preserveObjectStacking: true
+        });
+        
+        canvas.calcOffset();
+
+        canvas.on('selection:created', onObjectSelected);
+        canvas.on('selection:updated', onObjectSelected);
+        canvas.on('selection:cleared', () => {
+          document.getElementById('transformControls').style.display = 'none';
+        });
+
+        document.getElementById('angleSlider').addEventListener('input', function() {
+          if(!canvas) return;
+          let active = canvas.getActiveObject();
+          if (active) { active.set('angle', parseInt(this.value)).setCoords(); canvas.renderAll(); }
+        });
+
+        document.getElementById('scaleSlider').addEventListener('input', function() {
+          if(!canvas) return;
+          let active = canvas.getActiveObject();
+          if (active) { active.scale(parseFloat(this.value)).setCoords(); canvas.renderAll(); }
+        });
+
+        document.getElementById('cameraLoader').addEventListener('change', function(e) { handleImageFiles(e.target.files); });
+        document.getElementById('galleryLoader').addEventListener('change', function(e) { handleImageFiles(e.target.files); });
+
+        document.getElementById('audioLoader').addEventListener('change', function(e) {
+          const file = e.target.files[0];
+          if (file) {
+            document.getElementById('audioName').style.display = 'block';
+            document.getElementById('audioName').innerText = `🎵 Track: ${file.name.substring(0, 25)}`;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+              audioContext = new (window.AudioContext || window.webkitAudioContext)();
+              audioContext.decodeAudioData(evt.target.result, function(buffer) {
+                selectedAudioBuffer = buffer;
+              });
+            };
+            reader.readAsArrayBuffer(file);
+          }
+        });
+
+        canvas.renderAll();
+
+        debugBox.style.background = '#e8f5e9';
+        debugBox.style.color = '#2e7d32';
+        debugBox.style.borderColor = '#81c784';
+        debugBox.innerHTML = "✅ <b>Success:</b> Fabric.js runtime initialized and active functions fully mapped!";
+        
+        setTimeout(() => { debugBox.style.display = 'none'; }, 3000);
+
+      } catch (err) {
+        debugBox.style.background = '#ffebee';
+        debugBox.style.color = '#c62828';
+        debugBox.innerHTML = `<div>❌ <b>Init Crash:</b> ${err.message}</div>`;
+      }
+    });
+  </script>
+</body>
+</html>
