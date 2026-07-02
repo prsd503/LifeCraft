@@ -1,6 +1,7 @@
 {
   "short_name": "LifeCraft",
-  "name": "LifeCraftt Collage & Video Creator",
+  "name": "LifeCraft Collage & Video Creator",
+  "description": "An interactive web app to create photo collages, customize themes, layout designs, and export animated videos.",
   "icons": [
     {
       "src": "https://img.icons8.com/fluent/192/000000/video-editing.png",
