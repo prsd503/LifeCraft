@@ -210,10 +210,10 @@
 <body>
 
   <header>
-    <h1>🎊LifeCraft🎊</h1>
+    <h1>🎊 LifeCraft 🎊</h1>
   </header>
 
-  <!--<div id="runtimeDebugLog">
+  <!--  <div id="runtimeDebugLog">
     ⚙️ <b>System Diagnostics Panel:</b> Waiting for page lifecycle load...
   </div> -->
 
@@ -223,7 +223,7 @@
         <canvas id="collageCanvas" width="360" height="360"></canvas>
       </div>
       
-      <div class="status-log" id="statusLog">Capture photos to start!</div>
+      
 
       <div class="transform-controls" id="transformControls">
         <label>Selected Photo Tuning:</label>
@@ -327,6 +327,7 @@
         <button class="btn" onclick="downloadCollageImage()">💾 Save Image (JPG)</button>
         <button class="btn btn-accent" onclick="exportAnimatedVideo()">🎬 Export Video (MP4)</button>
       </div>
+      <div class="status-log" id="statusLog">Capture photos to start!</div>
     </div>
   </div>
 
@@ -577,4 +578,4 @@
 
       mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
       mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: 
+        const blob = new Blob(recorde
