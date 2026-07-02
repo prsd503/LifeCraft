@@ -1,19 +1,21 @@
 {
   "short_name": "LifeCraft",
-  "name": "LifeCraft - Event Photo Collage & Video Maker",
+  "name": "LifeCraftt Collage & Video Creator",
   "icons": [
     {
-      "src": "https://img.icons8.com/fluid/192/magic-wand.png",
+      "src": "https://img.icons8.com/fluent/192/000000/video-editing.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
-      "src": "https://img.icons8.com/fluid/512/magic-wand.png",
+      "src": "https://img.icons8.com/fluent/512/000000/video-editing.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
-  "start_url": "index.html",
+  "start_url": "./index.html",
   "background_color": "#FF6B6B",
   "theme_color": "#4ECDC4",
   "display": "standalone",
