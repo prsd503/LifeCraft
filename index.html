@@ -1,4 +1,4 @@
-headerfeCraftfeCraftDOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -210,12 +210,12 @@ headerfeCraftfeCraftDOCTYPE html>
 <body>
 
   <header>
-    <h1>🎨 LifeCraftt 🎊</h1>
+    <h1> ⭐ LifeCraft ⭐</h1>
   </header>
 
-  <div id="runtimeDebugLog">
+ <!-- <div id="runtimeDebugLog">
     ⚙️ <b>System Diagnostics Panel:</b> Waiting for page lifecycle load...
-  </div>
+  </div> -->
 
   <div class="container">
     <div class="card">
@@ -223,7 +223,7 @@ headerfeCraftfeCraftDOCTYPE html>
         <canvas id="collageCanvas" width="360" height="360"></canvas>
       </div>
       
-      <div class="status-log" id="statusLog">Capture photos to start!</div>
+      
 
       <div class="transform-controls" id="transformControls">
         <label>Selected Photo Tuning:</label>
@@ -327,6 +327,7 @@ headerfeCraftfeCraftDOCTYPE html>
         <button class="btn" onclick="downloadCollageImage()">💾 Save Image (JPG)</button>
         <button class="btn btn-accent" onclick="exportAnimatedVideo()">🎬 Export Video (MP4)</button>
       </div>
+      <div class="status-log" id="statusLog">Capture photos to start!</div>
     </div>
   </div>
 
@@ -577,4 +578,140 @@ headerfeCraftfeCraftDOCTYPE html>
 
       mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
       mediaRecorder.onstop = () => {
-        const blob = new Blob(recordedChunks, { type: 
+        const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+        const link = document.createElement('a');
+        link.download = 'lifecraft-video.mp4';
+        link.href = URL.createObjectURL(blob);
+        link.click();
+        statusElement.innerText = "✅ Video Download Complete!";
+        if (audioSource) { try { audioSource.stop(); } catch(e){} }
+        uploadedImages.forEach(img => img.set({ opacity: 1 }));
+        canvas.renderAll();
+      };
+
+      const initialPositions = uploadedImages.map(img => ({
+        obj: img, origScaleX: img.scaleX, origScaleY: img.scaleY, origAngle: img.angle
+      }));
+
+      mediaRecorder.start();
+      if (audioSource) audioSource.start(0);
+
+      let currentFrame = 0;
+
+      function renderFrameLoop() {
+        if (currentFrame >= totalFrames) {
+          mediaRecorder.stop();
+          return;
+        }
+
+        const progress = currentFrame / totalFrames;
+
+        initialPositions.forEach((item, index) => {
+          if (animStyle === 'pop') {
+            const triggerProgress = index / initialPositions.length;
+            if (progress >= triggerProgress) {
+              const localProgress = Math.min(1, (progress - triggerProgress) / (1 - triggerProgress) * 2);
+              item.obj.set({ opacity: 1, scaleX: item.origScaleX * localProgress, scaleY: item.origScaleY * localProgress });
+            } else {
+              item.obj.set({ opacity: 0 });
+            }
+          } 
+          else if (animStyle === 'fade') {
+            const fadeProgress = Math.min(1, progress * 2);
+            item.obj.set({ opacity: fadeProgress });
+          } 
+          else if (animStyle === 'spin') {
+            const spinProgress = Math.min(1, progress * 1.5);
+            item.obj.set({
+              opacity: spinProgress,
+              angle: item.origAngle + ((1 - spinProgress) * 180),
+              scaleX: item.origScaleX * spinProgress,
+              scaleY: item.origScaleY * spinProgress
+            });
+          }
+        });
+
+        canvas.renderAll();
+        currentFrame++;
+        statusElement.innerText = `Rendering Progress: ${Math.round(progress * 100)}%`;
+        requestAnimationFrame(renderFrameLoop);
+      }
+
+      uploadedImages.forEach(img => img.set({ opacity: 0 }));
+      canvas.renderAll();
+
+      setTimeout(renderFrameLoop, 300);
+    }
+
+    // MAIN LOAD INITIALIZER
+    window.addEventListener('load', () => {
+      const debugBox = document.getElementById('runtimeDebugLog');
+      try {
+        if (typeof fabric === 'undefined') {
+          throw new Error("Fabric.js script missing or broken from host connection link.");
+        }
+
+        canvas = new fabric.Canvas('collageCanvas', {
+          width: 360,
+          height: 360,
+          backgroundColor: '#ffffff',
+          preserveObjectStacking: true
+        });
+        
+        canvas.calcOffset();
+
+        canvas.on('selection:created', onObjectSelected);
+        canvas.on('selection:updated', onObjectSelected);
+        canvas.on('selection:cleared', () => {
+          document.getElementById('transformControls').style.display = 'none';
+        });
+
+        document.getElementById('angleSlider').addEventListener('input', function() {
+          if(!canvas) return;
+          let active = canvas.getActiveObject();
+          if (active) { active.set('angle', parseInt(this.value)).setCoords(); canvas.renderAll(); }
+        });
+
+        document.getElementById('scaleSlider').addEventListener('input', function() {
+          if(!canvas) return;
+          let active = canvas.getActiveObject();
+          if (active) { active.scale(parseFloat(this.value)).setCoords(); canvas.renderAll(); }
+        });
+
+        document.getElementById('cameraLoader').addEventListener('change', function(e) { handleImageFiles(e.target.files); });
+        document.getElementById('galleryLoader').addEventListener('change', function(e) { handleImageFiles(e.target.files); });
+
+        document.getElementById('audioLoader').addEventListener('change', function(e) {
+          const file = e.target.files[0];
+          if (file) {
+            document.getElementById('audioName').style.display = 'block';
+            document.getElementById('audioName').innerText = `🎵 Track: ${file.name.substring(0, 25)}`;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+              audioContext = new (window.AudioContext || window.webkitAudioContext)();
+              audioContext.decodeAudioData(evt.target.result, function(buffer) {
+                selectedAudioBuffer = buffer;
+              });
+            };
+            reader.readAsArrayBuffer(file);
+          }
+        });
+
+        canvas.renderAll();
+
+        debugBox.style.background = '#e8f5e9';
+        debugBox.style.color = '#2e7d32';
+        debugBox.style.borderColor = '#81c784';
+        debugBox.innerHTML = "✅ <b>Success:</b> Fabric.js runtime initialized and active functions fully mapped!";
+        
+        setTimeout(() => { debugBox.style.display = 'none'; }, 3000);
+
+      } catch (err) {
+        debugBox.style.background = '#ffebee';
+        debugBox.style.color = '#c62828';
+        debugBox.innerHTML = `<div>❌ <b>Init Crash:</b> ${err.message}</div>`;
+      }
+    });
+  </script>
+</body>
+</html>
