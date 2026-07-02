@@ -6,7 +6,7 @@
   <title>LifeCraft - Collage & Video Creator</title>
   <link rel="manifest" href="manifest.json">
   <!-- Google Fonts for stylish event options -->
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Cinzel:wght@700&family=Fredoka+One&family=Montserrat:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght=700&family=Cinzel:wght@700&family=Fredoka+One&family=Montserrat:wght@700&display=swap" rel="stylesheet">
   <!-- Fabric.js handles object scaling, rotation, and layers -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
   <style>
@@ -340,13 +340,17 @@
     let selectedAudioBuffer = null;
     let audioContext = null;
 
+    // Fix alignment calculations on mobile window scopes
+    window.addEventListener('load', () => {
+      canvas.calcOffset();
+    });
+
     canvas.on('selection:created', onObjectSelected);
     canvas.on('selection:updated', onObjectSelected);
     canvas.on('selection:cleared', () => {
       document.getElementById('transformControls').style.display = 'none';
     });
 
-    // Handle single object interaction controls
     function onObjectSelected(e) {
       if (e.target && e.target.type === 'image') {
         document.getElementById('transformControls').style.display = 'block';
@@ -387,17 +391,16 @@
       document.getElementById('statusLog').innerText = "Cleared all photos from layout!";
     }
 
-    // UPDATED PIPELINE: Solves local vs production environment async rendering blockages
+    // FIXED PIPELINE: Native initialization safe for GitHub Pages deployments
     function handleImageFiles(files) {
       if(!files.length) return;
       
       for (let i = 0; i < files.length; i++) {
         const reader = new FileReader();
         reader.onload = function(event) {
-          const dataUrl = event.target.result;
-          
-          fabric.Image.fromURL(dataUrl, function(fabricImg) {
-            fabricImg.set({
+          const imgElement = new Image();
+          imgElement.onload = function() {
+            const fabricImg = new fabric.Image(imgElement, {
               left: 40 + (uploadedImages.length * 30) % 140,
               top: 40 + (uploadedImages.length * 30) % 140,
               cornerColor: '#4ECDC4',
@@ -410,17 +413,13 @@
             uploadedImages.push(fabricImg);
             
             arrangeLayerOrder();
-            
-            // Forced re-render triggers rendering on live HTTP pipelines right when assets process
-            canvas.renderAll(); 
-          }, { crossOrigin: 'anonymous' }); 
+            canvas.renderAll();
+          };
+          imgElement.src = event.target.result;
         };
         reader.readAsDataURL(files[i]);
       }
       document.getElementById('statusLog').innerText = `Loaded ${files.length} photo(s).`;
-      
-      // Secondary execution block forces layer visibility parameters
-      setTimeout(() => { canvas.requestRenderAll(); }, 120);
     }
 
     document.getElementById('cameraLoader').addEventListener('change', function(e) { handleImageFiles(e.target.files); });
@@ -464,13 +463,15 @@
         const targetY = (canvas.height / 2) + Math.sin(radian) * 60 - 90;
         const randomTilt = Math.floor(Math.random() * 30) - 15;
 
-        img.animate({ left: targetX, top: targetY, angle: randomTilt }, {
-          duration: 500,
+        img.animate('left', targetX, { duration: 400, onChange: canvas.renderAll.bind(canvas) });
+        img.animate('top', targetY, { duration: 400, onChange: canvas.renderAll.bind(canvas) });
+        img.animate('angle', randomTilt, {
+          duration: 400,
           onChange: canvas.renderAll.bind(canvas),
           easing: fabric.util.ease.easeOutBack
         });
       });
-      setTimeout(arrangeLayerOrder, 550);
+      setTimeout(arrangeLayerOrder, 450);
     }
 
     function applyThemeDecoration() {
@@ -488,7 +489,6 @@
           document.getElementById('customText').value = "HAPPY BIRTHDAY 🎉";
           document.getElementById('textBgColor').value = "#ff4a75";
           document.getElementById('textColor').value = "#ffffff";
-          updateCustomText();
           break;
         case 'anniversary':
           frameColor = '#D4AF37';
@@ -497,7 +497,6 @@
           document.getElementById('customText').value = "HAPPY ANNIVERSARY ❤️";
           document.getElementById('textBgColor').value = "#D4AF37";
           document.getElementById('textColor').value = "#ffffff";
-          updateCustomText();
           break;
         case 'vacation':
           frameColor = '#4ECDC4';
@@ -506,7 +505,6 @@
           document.getElementById('customText').value = "VACATION MEMORIES 🌴";
           document.getElementById('textBgColor').value = "#4ECDC4";
           document.getElementById('textColor').value = "#ffffff";
-          updateCustomText();
           break;
         case 'graduation':
           frameColor = '#2C3E50';
@@ -515,7 +513,6 @@
           document.getElementById('customText').value = "CLASS OF 2026 🎓";
           document.getElementById('textBgColor').value = "#2C3E50";
           document.getElementById('textColor').value = "#ffffff";
-          updateCustomText();
           break;
         default:
           canvas.setBackgroundColor('#ffffff', canvas.renderAll.bind(canvas));
@@ -536,7 +533,8 @@
         });
         canvas.add(borderFrame);
       }
-      arrangeLayerOrder();
+      
+      updateCustomText();
     }
 
     function updateCustomText() {
@@ -553,7 +551,6 @@
       }
 
       let textOptions = {
-        text: textVal,
         fill: colorVal,
         textBackgroundColor: bgBarColorVal,
         fontFamily: fontVal,
@@ -576,12 +573,14 @@
 
       if (textObject) {
         textObject.set(textOptions);
+        textObject.set('text', textVal);
       } else {
         textOptions.top = canvas.height - 35;
         textOptions.originY = 'center';
         textObject = new fabric.Text(textVal, textOptions);
         canvas.add(textObject);
       }
+      
       arrangeLayerOrder();
     }
 
@@ -607,4 +606,7 @@
       
       statusElement.innerText = "Encoding canvas elements to video stream...";
 
-      const captureCanvas = document.getElementById('collageCa
+      const captureCanvas = document.getElementById('collageCanvas');
+      const stream = captureCanvas.captureStream(fps);
+      
+      let media
