@@ -6,9 +6,11 @@
   <title>LifeCraft - Collage & Video Creator</title>
   <link rel="manifest" href="manifest.json">
   <!-- Google Fonts for stylish event options -->
-  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght=700&family=Cinzel:wght@700&family=Fredoka+One&family=Montserrat:wght@700&display=swap" rel="stylesheet">
-  <!-- Fabric.js handles object scaling, rotation, and layers -->
+  <link href="https://fonts.googleapis.com/css2?family=Caveat:wght=700&family=Cinzel:wght=700&family=Fredoka+One&family=Montserrat:wght=700&display=swap" rel="stylesheet">
+  
+  <!-- 🔥 CRITICAL FIX: FORCED SECURE HTTPS LINK FOR FABRIC.JS TO PREVENT GITHUB PAGES FROM BLOCKING IT -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+
   <style>
     :root {
       --primary: #FF6B6B;
@@ -211,7 +213,7 @@
 <body>
 
   <header>
-    <h1>🎨 LifeCraft</h1>
+    <h1>😎 LifeCraft 😀</h1>
   </header>
 
   <div class="container">
@@ -329,26 +331,27 @@
   </div>
 
   <script>
-    const canvas = new fabric.Canvas('collageCanvas', {
-      backgroundColor: '#ffffff',
-      preserveObjectStacking: true
-    });
-
+    let canvas;
     let uploadedImages = [];
     let borderFrame = null;
     let textObject = null;
     let selectedAudioBuffer = null;
     let audioContext = null;
 
-    // Fix alignment calculations on mobile window scopes
-    window.addEventListener('load', () => {
+    // 🔥 INITIALIZATION GUARD: Ensures Dom structure parses cleanly before Fabric maps elements
+    window.addEventListener('DOMContentLoaded', () => {
+      canvas = new fabric.Canvas('collageCanvas', {
+        backgroundColor: '#ffffff',
+        preserveObjectStacking: true
+      });
+      
       canvas.calcOffset();
-    });
 
-    canvas.on('selection:created', onObjectSelected);
-    canvas.on('selection:updated', onObjectSelected);
-    canvas.on('selection:cleared', () => {
-      document.getElementById('transformControls').style.display = 'none';
+      canvas.on('selection:created', onObjectSelected);
+      canvas.on('selection:updated', onObjectSelected);
+      canvas.on('selection:cleared', () => {
+        document.getElementById('transformControls').style.display = 'none';
+      });
     });
 
     function onObjectSelected(e) {
@@ -362,16 +365,19 @@
     }
 
     document.getElementById('angleSlider').addEventListener('input', function() {
+      if(!canvas) return;
       let active = canvas.getActiveObject();
       if (active) { active.set('angle', parseInt(this.value)).setCoords(); canvas.renderAll(); }
     });
 
     document.getElementById('scaleSlider').addEventListener('input', function() {
+      if(!canvas) return;
       let active = canvas.getActiveObject();
       if (active) { active.scale(parseFloat(this.value)).setCoords(); canvas.renderAll(); }
     });
 
     function deleteSelectedObj() {
+      if(!canvas) return;
       let active = canvas.getActiveObject();
       if (active) {
         uploadedImages = uploadedImages.filter(img => img !== active);
@@ -383,7 +389,7 @@
     }
 
     function clearAllImages() {
-      if (uploadedImages.length === 0) return;
+      if (!canvas || uploadedImages.length === 0) return;
       uploadedImages.forEach(img => canvas.remove(img));
       uploadedImages = [];
       canvas.discardActiveObject();
@@ -391,9 +397,8 @@
       document.getElementById('statusLog').innerText = "Cleared all photos from layout!";
     }
 
-    // FIXED PIPELINE: Native initialization safe for GitHub Pages deployments
     function handleImageFiles(files) {
-      if(!files.length) return;
+      if(!canvas || !files.length) return;
       
       for (let i = 0; i < files.length; i++) {
         const reader = new FileReader();
@@ -442,6 +447,7 @@
     });
 
     function arrangeLayerOrder() {
+      if(!canvas) return;
       if (borderFrame) {
         canvas.sendToBack(borderFrame);
       }
@@ -455,7 +461,7 @@
     }
 
     function generateRandomLayout() {
-      if (uploadedImages.length === 0) return;
+      if (!canvas || uploadedImages.length === 0) return;
       uploadedImages.forEach((img, index) => {
         const sliceAngle = (360 / uploadedImages.length) * index;
         const radian = (sliceAngle * Math.PI) / 180;
@@ -475,6 +481,7 @@
     }
 
     function applyThemeDecoration() {
+      if(!canvas) return;
       const theme = document.getElementById('themeSelect').value;
       if (borderFrame) { canvas.remove(borderFrame); borderFrame = null; }
 
@@ -538,6 +545,7 @@
     }
 
     function updateCustomText() {
+      if(!canvas) return;
       const textVal = document.getElementById('customText').value;
       const colorVal = document.getElementById('textColor').value;
       const bgBarColorVal = document.getElementById('textBgColor').value;
@@ -585,6 +593,7 @@
     }
 
     function downloadCollageImage() {
+      if(!canvas) return;
       canvas.discardActiveObject();
       canvas.renderAll();
       const dataURL = canvas.toDataURL({ format: 'jpeg', quality: 0.95 });
@@ -595,6 +604,7 @@
     }
 
     async function exportAnimatedVideo() {
+      if(!canvas) return;
       canvas.discardActiveObject();
       canvas.renderAll();
 
@@ -602,11 +612,4 @@
       const animStyle = document.getElementById('animationStyle').value;
       const fps = 25;
       const totalFrames = duration * fps;
-      const statusElement = document.getElementById('statusLog');
-      
-      statusElement.innerText = "Encoding canvas elements to video stream...";
-
-      const captureCanvas = document.getElementById('collageCanvas');
-      const stream = captureCanvas.captureStream(fps);
-      
-      let media
+      c
