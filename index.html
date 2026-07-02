@@ -275,7 +275,6 @@
             <input type="color" id="textColor" value="#ffffff" onchange="updateCustomText()">
           </div>
 
-          <!-- Added Background Color Picker to achieve bold background banner style like 40741.jpg -->
           <div class="color-picker-wrapper" title="Banner Background Color">
             <label style="font-size:0.75rem; margin:0;">Bg Banner:</label>
             <input type="color" id="textBgColor" value="#ff4a75" onchange="updateCustomText()">
@@ -387,15 +386,17 @@
       document.getElementById('statusLog').innerText = "Cleared all photos from layout!";
     }
 
+    // FIXED: Uses fabric.Image.fromURL structure to avoid live HTTPS sandbox blocks on GitHub Pages
     function handleImageFiles(files) {
       if(!files.length) return;
       
       for (let i = 0; i < files.length; i++) {
         const reader = new FileReader();
         reader.onload = function(event) {
-          const imgObj = new Image();
-          imgObj.onload = function() {
-            const fabricImg = new fabric.Image(imgObj, {
+          const dataUrl = event.target.result;
+          
+          fabric.Image.fromURL(dataUrl, function(fabricImg) {
+            fabricImg.set({
               left: 40 + (uploadedImages.length * 30) % 140,
               top: 40 + (uploadedImages.length * 30) % 140,
               cornerColor: '#4ECDC4',
@@ -408,8 +409,7 @@
             uploadedImages.push(fabricImg);
             
             arrangeLayerOrder();
-          };
-          imgObj.src = event.target.result;
+          }, { crossOrigin: 'anonymous' }); // Guarantees security handshake parity over live web-servers
         };
         reader.readAsDataURL(files[i]);
       }
@@ -479,7 +479,7 @@
           frameStroke = 10;
           canvas.setBackgroundColor('#FFF9E6', canvas.renderAll.bind(canvas));
           document.getElementById('customText').value = "HAPPY BIRTHDAY 🎉";
-          document.getElementById('textBgColor').value = "#ff4a75"; // Bold pink matching 40741.jpg
+          document.getElementById('textBgColor').value = "#ff4a75";
           document.getElementById('textColor').value = "#ffffff";
           updateCustomText();
           break;
@@ -532,7 +532,6 @@
       arrangeLayerOrder();
     }
 
-    // Dynamic rendering engine configuration adjusted to mirror 40741.jpg banner parameters
     function updateCustomText() {
       const textVal = document.getElementById('customText').value;
       const colorVal = document.getElementById('textColor').value;
@@ -549,7 +548,7 @@
       let textOptions = {
         text: textVal,
         fill: colorVal,
-        textBackgroundColor: bgBarColorVal, // Sets a solid, bold layout block background behind text
+        textBackgroundColor: bgBarColorVal,
         fontFamily: fontVal,
         textAlign: alignVal,
         fontSize: 20,
@@ -571,7 +570,6 @@
       if (textObject) {
         textObject.set(textOptions);
       } else {
-        // Positioned at bottom center of frame layout space
         textOptions.top = canvas.height - 35;
         textOptions.originY = 'center';
         textObject = new fabric.Text(textVal, textOptions);
@@ -605,4 +603,10 @@
       const captureCanvas = document.getElementById('collageCanvas');
       const stream = captureCanvas.captureStream(fps);
       
-      l
+      let mediaRecorder;
+      let recordedChunks = [];
+      let audioDest = null;
+      let audioSource = null;
+
+      if (selectedAudioBuffer && audioContext) {
+        audioDest = audioCo
