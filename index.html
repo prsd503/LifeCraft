@@ -205,24 +205,12 @@
       font-weight: 600;
       color: var(--primary);
     }
-    
-    .video-status-log {
-      text-align: center;
-      font-size: 0.95rem;
-      font-weight: bold;
-      color: #2e7d32;
-      margin-top: 10px;
-      padding: 6px;
-      background-color: #f1f8e9;
-      border-radius: 8px;
-      display: none;
-    }
   </style>
 </head>
 <body>
 
   <header>
-    <h1>LifeCraftt 🎉</h1>
+    <h1>🎨 LifeCraft</h1>
   </header>
 
   <div id="runtimeDebugLog">
@@ -339,9 +327,6 @@
         <button class="btn" onclick="downloadCollageImage()">💾 Save Image (JPG)</button>
         <button class="btn btn-accent" onclick="exportAnimatedVideo()">🎬 Export Video (MP4)</button>
       </div>
-      
-      <!-- MOVED STATUS CONTAINER PRECISELY UNDER EXPORT BUTTONS -->
-      <div class="video-status-log" id="videoStatusLog"></div>
     </div>
   </div>
 
@@ -383,9 +368,9 @@
       textObject = null;
       borderFrame = null;
       document.getElementById('statusLog').innerText = "Cleared all photos!";
-      document.getElementById('videoStatusLog').style.display = "none";
     }
 
+    // BULLETPROOF SECURE MOBILE IMAGE LOADER
     function handleImageFiles(files) {
       if(!canvas || !files.length) return;
       document.getElementById('statusLog').innerText = "Processing media layers...";
@@ -558,13 +543,9 @@
       const animStyle = document.getElementById('animationStyle').value;
       const fps = 25;
       const totalFrames = duration * fps;
+      const statusElement = document.getElementById('statusLog');
       
-      // TARGETING NESTED BOTTOM VIDEO CONTAINER
-      const videoStatus = document.getElementById('videoStatusLog');
-      videoStatus.style.display = "block";
-      videoStatus.style.color = "#e65100";
-      videoStatus.style.backgroundColor = "#fff3e0";
-      videoStatus.innerText = "🎬 Preparing video layers...";
+      statusElement.innerText = "Encoding canvas elements to video stream...";
 
       const captureCanvas = document.getElementById('collageCanvas');
       const stream = captureCanvas.captureStream(fps);
@@ -584,4 +565,16 @@
       }
 
       let options = { mimeType: 'video/webm;codecs=vp9' };
-   
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/webm;codecs=vp8' };
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/webm' };
+
+      try {
+        mediaRecorder = new MediaRecorder(stream, options);
+      } catch (err) {
+        statusElement.innerText = "Video encoding failure on this browser platform.";
+        return;
+      }
+
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 
