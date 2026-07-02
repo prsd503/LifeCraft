@@ -101,17 +101,26 @@
                     <input type="range" id="angleSlider" min="-180" max="180" step="5" value="0">
                 </div>
             </div>
+<div class="section-box">
+    <h3>🎨 Theme Settings</h3>
+    
+    <!-- Existing Theme Selector -->
+    <div class="row" style="margin-bottom:8px;">
+        <select id="themeSelect">
+            <option value="none">No Theme (Clean)</option>
+            <option value="birthday">🎂 Happy Birthday</option>
+            <option value="anniversary">❤️ Happy Anniversary</option>
+            <option value="custom">✍️ Custom Occasion</option>
+        </select>
+    </div>
 
-            <div class="section-box">
-                <h3>🎨 Themes & Events</h3>
-                <div class="row" style="margin-bottom:8px;">
-                    <select id="themeSelect">
-                        <option value="none">No Theme (Clean)</option>
-                        <option value="birthday">🎂 Happy Birthday</option>
-                        <option value="anniversary">❤️ Happy Anniversary</option>
-                        <option value="custom">✍️ Custom Life Event</option>
-                    </select>
-                </div>
+    <!-- Always Visible Custom Inputs (Optional Modification) -->
+    <div id="customThemeOptions" class="row" style="margin-top: 10px; border-top: 1px solid #ddd; padding-top: 10px;">
+        <input type="text" id="customText" placeholder="Enter custom title here...">
+        <input type="color" id="customColor" value="#ff477e" style="width:60px; padding:2px; height:45px;">
+    </div>
+</div>
+
                 <div id="customThemeOptions" class="row" style="display: none; margin-bottom:8px;">
                     <input type="text" id="customText" placeholder="Type event name... e.g. Graduation!">
                     <input type="color" id="customColor" value="#ff477e" style="width:60px; padding:2px; height:45px;">
