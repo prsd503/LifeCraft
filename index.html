@@ -346,6 +346,7 @@
       document.getElementById('transformControls').style.display = 'none';
     });
 
+    // Handle single object interaction controls
     function onObjectSelected(e) {
       if (e.target && e.target.type === 'image') {
         document.getElementById('transformControls').style.display = 'block';
@@ -386,7 +387,7 @@
       document.getElementById('statusLog').innerText = "Cleared all photos from layout!";
     }
 
-    // FIXED: Uses fabric.Image.fromURL structure to avoid live HTTPS sandbox blocks on GitHub Pages
+    // UPDATED PIPELINE: Solves local vs production environment async rendering blockages
     function handleImageFiles(files) {
       if(!files.length) return;
       
@@ -409,11 +410,17 @@
             uploadedImages.push(fabricImg);
             
             arrangeLayerOrder();
-          }, { crossOrigin: 'anonymous' }); // Guarantees security handshake parity over live web-servers
+            
+            // Forced re-render triggers rendering on live HTTP pipelines right when assets process
+            canvas.renderAll(); 
+          }, { crossOrigin: 'anonymous' }); 
         };
         reader.readAsDataURL(files[i]);
       }
       document.getElementById('statusLog').innerText = `Loaded ${files.length} photo(s).`;
+      
+      // Secondary execution block forces layer visibility parameters
+      setTimeout(() => { canvas.requestRenderAll(); }, 120);
     }
 
     document.getElementById('cameraLoader').addEventListener('change', function(e) { handleImageFiles(e.target.files); });
@@ -600,13 +607,4 @@
       
       statusElement.innerText = "Encoding canvas elements to video stream...";
 
-      const captureCanvas = document.getElementById('collageCanvas');
-      const stream = captureCanvas.captureStream(fps);
-      
-      let mediaRecorder;
-      let recordedChunks = [];
-      let audioDest = null;
-      let audioSource = null;
-
-      if (selectedAudioBuffer && audioContext) {
-        audioDest = audioCo
+      const captureCanvas = document.getElementById('collageCa
