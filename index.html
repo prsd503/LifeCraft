@@ -602,5 +602,408 @@
       canvas.renderAll();
       document.getElementById('statusLog').innerText = "Image sent to back (above frame).";
     }
+ // New: Mix Positions layout applier. Cycle through layoutModes each press, and apply to selected objects if any, otherwise to all images.
+    function applyMixLayout() {
+      if (!canvas) return;
+      // Determine targets: if there is a multiple selection, use those, otherwise use all uploaded images
+      let activeSelection = canvas.getActiveObjects ? canvas.getActiveObjects() : [];
+      const targets = (activeSelection && activeSelection.length > 0) ? activeSelection.filter(o => o.type === 'image') : uploadedImages.slice();
+      if (!targets || targets.length === 0) {
+        document.getElementById('statusLog').innerText = "No images to arrange.";
+        return;
+      }
 
-    // New: Mi
+      // Cycle mode
+      currentLayoutIndex = (currentLayoutIndex + 1) % layoutModes.length;
+      const mode = layoutModes[currentLayoutIndex];
+      document.getElementById('statusLog').innerText = `Applying layout: ${mode}...`;
+
+      performLayout(targets, mode);
+    }
+
+    // New: Apply the layout chosen in the select menu to selected images (if any) or all images
+    function applySelectedLayout() {
+      if (!canvas) return;
+      const selectedMode = document.getElementById('layoutSelect').value;
+      let activeSelection = canvas.getActiveObjects ? canvas.getActiveObjects() : [];
+      const targets = (activeSelection && activeSelection.length > 0) ? activeSelection.filter(o => o.type === 'image') : uploadedImages.slice();
+      if (!targets || targets.length === 0) {
+        document.getElementById('statusLog').innerText = "No images to arrange.";
+        return;
+      }
+      document.getElementById('statusLog').innerText = `Applying layout: ${selectedMode}...`;
+      performLayout(targets, selectedMode);
+    }
+
+    function performLayout(targets, mode) {
+      if (!canvas) return;
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+
+      if (mode === 'circle') {
+        const radius = Math.min(canvas.width, canvas.height) / 2 - 60;
+        targets.forEach((img, index) => {
+          const angle = (index / targets.length) * Math.PI * 2;
+          const x = centerX + Math.cos(angle) * radius - img.getScaledWidth() / 2;
+          const y = centerY + Math.sin(angle) * radius - img.getScaledHeight() / 2;
+          img.animate('left', x, { duration: 450, onChange: canvas.renderAll.bind(canvas) });
+          img.animate('top', y, { duration: 450, onChange: canvas.renderAll.bind(canvas) });
+          img.animate('angle', (index - (targets.length/2)) * 6, { duration: 450, onChange: canvas.renderAll.bind(canvas) });
+        });
+      }
+      else if (mode === 'grid') {
+        // compute grid size based on number of targets
+        const cols = Math.ceil(Math.sqrt(targets.length));
+        const cellW = canvas.width / cols;
+        const rows = Math.ceil(targets.length / cols);
+        targets.forEach((img, i) => {
+          const r = Math.floor(i / cols);
+          const c = i % cols;
+          const x = c * cellW + (cellW / 2) - img.getScaledWidth() / 2;
+          const y = r * (canvas.height / rows) + (canvas.height / (2*rows)) - img.getScaledHeight() / 2;
+          img.animate('left', x, { duration: 450, onChange: canvas.renderAll.bind(canvas) });
+          img.animate('top', y, { duration: 450, onChange: canvas.renderAll.bind(canvas) });
+          img.animate('angle', 0, { duration: 450, onChange: canvas.renderAll.bind(canvas) });
+        });
+      }
+      else if (mode === 'fan') {
+        // fan out from left to right centered vertically
+        const spread = Math.min(canvas.width - 40, targets.length * 60);
+        const startX = centerX - (spread / 2);
+        targets.forEach((img, i) => {
+          const t = i / (targets.length - 1 || 1);
+          const x = startX + t * spread - img.getScaledWidth() / 2;
+          const y = centerY - (Math.abs(t - 0.5) * 100) - img.getScaledHeight() / 2;
+          const angle = (t - 0.5) * 40;
+          img.animate('left', x, { duration: 450, onChange: canvas.renderAll.bind(canvas) });
+          img.animate('top', y, { duration: 450, onChange: canvas.renderAll.bind(canvas) });
+          img.animate('angle', angle, { duration: 450, onChange: canvas.renderAll.bind(canvas) });
+        });
+      }
+      else if (mode === 'stack') {
+        // center stack with slight offsets
+        const baseX = centerX - 70;
+        const baseY = centerY - 70;
+        targets.forEach((img, i) => {
+          const offset = i * 6;
+          img.animate('left', baseX + offset, { duration: 300, onChange: canvas.renderAll.bind(canvas) });
+          img.animate('top', baseY + offset, { duration: 300, onChange: canvas.renderAll.bind(canvas) });
+          img.animate('angle', (i % 2 ? -3 : 3) * i, { duration: 300, onChange: canvas.renderAll.bind(canvas) });
+        });
+      }
+      else { // random
+        targets.forEach((img) => {
+          const x = Math.random() * (canvas.width - img.getScaledWidth());
+          const y = Math.random() * (canvas.height - img.getScaledHeight());
+          const angle = Math.floor(Math.random() * 60) - 30;
+          img.animate('left', x, { duration: 450, onChange: canvas.renderAll.bind(canvas) });
+          img.animate('top', y, { duration: 450, onChange: canvas.renderAll.bind(canvas) });
+          img.animate('angle', angle, { duration: 450, onChange: canvas.renderAll.bind(canvas) });
+        });
+      }
+
+      // After animating positions, ensure ordering is consistent
+      setTimeout(() => { updateUploadedImagesFromCanvas(); arrangeLayerOrder(); }, 500);
+    }
+
+    function applyThemeDecoration() {
+      if(!canvas) return;
+      const theme = document.getElementById('themeSelect').value;
+      if (borderFrame) { canvas.remove(borderFrame); borderFrame = null; }
+
+      let frameColor = 'transparent';
+      let frameStroke = 0;
+
+      switch(theme) {
+        case 'birthday':
+          frameColor = '#FF6B6B'; frameStroke = 10;
+          canvas.setBackgroundColor('#FFF9E6', canvas.renderAll.bind(canvas));
+          document.getElementById('customText').value = "HAPPY BIRTHDAY 🎉";
+          document.getElementById('textBgColor').value = "#ff4a75";
+          document.getElementById('textColor').value = "#ffffff";
+          break;
+        case 'anniversary':
+          frameColor = '#D4AF37'; frameStroke = 10;
+          canvas.setBackgroundColor('#FFF0F5', canvas.renderAll.bind(canvas));
+          document.getElementById('customText').value = "HAPPY ANNIVERSARY ❤️";
+          document.getElementById('textBgColor').value = "#D4AF37";
+          document.getElementById('textColor').value = "#ffffff";
+          break;
+        case 'vacation':
+          frameColor = '#4ECDC4'; frameStroke = 10;
+          canvas.setBackgroundColor('#E0F7FA', canvas.renderAll.bind(canvas));
+          document.getElementById('customText').value = "VACATION MEMORIES 🌴";
+          document.getElementById('textBgColor').value = "#4ECDC4";
+          document.getElementById('textColor').value = "#ffffff";
+          break;
+        case 'graduation':
+          frameColor = '#2C3E50'; frameStroke = 10;
+          canvas.setBackgroundColor('#ECEFF1', canvas.renderAll.bind(canvas));
+          document.getElementById('customText').value = "CLASS OF 2026 🎓";
+          document.getElementById('textBgColor').value = "#2C3E50";
+          document.getElementById('textColor').value = "#ffffff";
+          break;
+        default:
+          canvas.setBackgroundColor('#ffffff', canvas.renderAll.bind(canvas));
+          break;
+      }
+
+      if (frameStroke > 0) {
+        borderFrame = new fabric.Rect({
+          left: frameStroke/2, top: frameStroke/2,
+          width: canvas.width - frameStroke, height: canvas.height - frameStroke,
+          fill: 'transparent', stroke: frameColor, strokeWidth: frameStroke,
+          selectable: false, evented: false
+        });
+        canvas.add(borderFrame);
+      }
+      updateCustomText();
+      updateUploadedImagesFromCanvas();
+      arrangeLayerOrder();
+    }
+
+    function updateCustomText() {
+      if(!canvas) return;
+      const textVal = document.getElementById('customText').value;
+      const colorVal = document.getElementById('textColor').value;
+      const bgBarColorVal = document.getElementById('textBgColor').value;
+      const fontVal = document.getElementById('fontStyle').value;
+      const alignVal = document.getElementById('textAlignment').value;
+
+      if (!textVal) {
+        if (textObject) { canvas.remove(textObject); textObject = null; }
+        canvas.renderAll();
+        return;
+      }
+
+      let textOptions = {
+        fill: colorVal, textBackgroundColor: bgBarColorVal, fontFamily: fontVal,
+        textAlign: alignVal, fontSize: 20, fontWeight: 'bold', selectable: true
+      };
+
+      if (alignVal === 'left') { textOptions.left = 20; textOptions.originX = 'left'; }
+      else if (alignVal === 'right') { textOptions.left = canvas.width - 20; textOptions.originX = 'right'; }
+      else { textOptions.left = canvas.width / 2; textOptions.originX = 'center'; }
+
+      if (textObject) {
+        textObject.set(textOptions);
+        textObject.set('text', textVal);
+      } else {
+        textOptions.top = canvas.height - 35;
+        textOptions.originY = 'center';
+        textObject = new fabric.Text(textVal, textOptions);
+        canvas.add(textObject);
+      }
+      updateUploadedImagesFromCanvas();
+      arrangeLayerOrder();
+    }
+
+    function downloadCollageImage() {
+      if(!canvas) return;
+      canvas.discardActiveObject();
+      canvas.renderAll();
+      const dataURL = canvas.toDataURL({ format: 'jpeg', quality: 0.95 });
+      const link = document.createElement('a');
+      link.download = 'lifecraft-collage.jpg';
+      link.href = dataURL;
+      link.click();
+    }
+
+    async function exportAnimatedVideo() {
+      if(!canvas || uploadedImages.length === 0) {
+        alert("Please import at least one photo before generating video transformations.");
+        return;
+      }
+      canvas.discardActiveObject();
+      canvas.renderAll();
+
+      const duration = parseInt(document.getElementById('videoDuration').value) || 5;
+      const animStyle = document.getElementById('animationStyle').value;
+      const fps = 25;
+      const totalFrames = duration * fps;
+      const statusElement = document.getElementById('statusLog');
+      
+      statusElement.innerText = "Encoding canvas elements to video stream...";
+
+      const captureCanvas = document.getElementById('collageCanvas');
+      const stream = captureCanvas.captureStream(fps);
+      
+      let mediaRecorder;
+      let recordedChunks = [];
+      let audioDest = null;
+      let audioSource = null;
+
+      if (selectedAudioBuffer && audioContext) {
+        audioDest = audioContext.createMediaStreamDestination();
+        audioSource = audioContext.createBufferSource();
+        audioSource.buffer = selectedAudioBuffer;
+        audioSource.loop = true;
+        audioSource.connect(audioDest);
+        stream.addTrack(audioDest.stream.getAudioTracks()[0]);
+      }
+
+      let options = { mimeType: 'video/webm;codecs=vp9' };
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/webm;codecs=vp8' };
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) options = { mimeType: 'video/webm' };
+
+      try {
+        mediaRecorder = new MediaRecorder(stream, options);
+      } catch (err) {
+        statusElement.innerText = "Video encoding failure on this browser platform.";
+        return;
+      }
+
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+        const link = document.createElement('a');
+        link.download = 'lifecraft-video.mp4';
+        link.href = URL.createObjectURL(blob);
+        link.click();
+        statusElement.innerText = "✅ Video Download Complete!";
+        if (audioSource) { try { audioSource.stop(); } catch(e){} }
+        uploadedImages.forEach(img => img.set({ opacity: 1 }));
+        canvas.renderAll();
+      };
+
+      const initialPositions = uploadedImages.map(img => ({
+        obj: img, origScaleX: img.scaleX, origScaleY: img.scaleY, origAngle: img.angle
+      }));
+
+      mediaRecorder.start();
+      if (audioSource) audioSource.start(0);
+
+      let currentFrame = 0;
+
+      function renderFrameLoop() {
+        if (currentFrame >= totalFrames) {
+          mediaRecorder.stop();
+          return;
+        }
+
+        const progress = currentFrame / totalFrames;
+
+        initialPositions.forEach((item, index) => {
+          if (animStyle === 'pop') {
+            const triggerProgress = index / initialPositions.length;
+            if (progress >= triggerProgress) {
+              const localProgress = Math.min(1, (progress - triggerProgress) / (1 - triggerProgress) * 2);
+              item.obj.set({ opacity: 1, scaleX: item.origScaleX * localProgress, scaleY: item.origScaleY * localProgress });
+            } else {
+              item.obj.set({ opacity: 0 });
+            }
+          } 
+          else if (animStyle === 'fade') {
+            const fadeProgress = Math.min(1, progress * 2);
+            item.obj.set({ opacity: fadeProgress });
+          } 
+          else if (animStyle === 'spin') {
+            const spinProgress = Math.min(1, progress * 1.5);
+            item.obj.set({
+              opacity: spinProgress,
+              angle: item.origAngle + ((1 - spinProgress) * 180),
+              scaleX: item.origScaleX * spinProgress,
+              scaleY: item.origScaleY * spinProgress
+            });
+          }
+        });
+
+        canvas.renderAll();
+        currentFrame++;
+        statusElement.innerText = `Rendering Progress: ${Math.round(progress * 100)}%`;
+        requestAnimationFrame(renderFrameLoop);
+      }
+
+      uploadedImages.forEach(img => img.set({ opacity: 0 }));
+      canvas.renderAll();
+
+      setTimeout(renderFrameLoop, 300);
+    }
+
+    // MAIN LOAD INITIALIZER
+    window.addEventListener('load', () => {
+      const debugBox = document.getElementById('runtimeDebugLog');
+      try {
+        if (typeof fabric === 'undefined') {
+          throw new Error("Fabric.js script missing or broken from host connection link.");
+        }
+
+        canvas = new fabric.Canvas('collageCanvas', {
+          width: 360,
+          height: 360,
+          backgroundColor: '#ffffff',
+          preserveObjectStacking: true
+        });
+        
+        canvas.calcOffset();
+
+        canvas.on('selection:created', onObjectSelected);
+        canvas.on('selection:updated', onObjectSelected);
+        canvas.on('selection:cleared', () => {
+          document.getElementById('transformControls').style.display = 'none';
+        });
+
+        // Allow multiple selection with shift/touch
+        canvas.selection = true;
+
+        document.getElementById('angleSlider').addEventListener('input', function() {
+          if(!canvas) return;
+          let active = canvas.getActiveObject();
+          if (active) { active.set('angle', parseInt(this.value)).setCoords(); canvas.renderAll(); }
+        });
+
+        document.getElementById('scaleSlider').addEventListener('input', function() {
+          if(!canvas) return;
+          let active = canvas.getActiveObject();
+          if (active) { active.scale(parseFloat(this.value)).setCoords(); canvas.renderAll(); }
+        });
+
+        document.getElementById('cameraLoader').addEventListener('change', function(e) { handleImageFiles(e.target.files); });
+        document.getElementById('galleryLoader').addEventListener('change', function(e) { handleImageFiles(e.target.files); });
+
+        document.getElementById('audioLoader').addEventListener('change', function(e) {
+          const file = e.target.files[0];
+          if (file) {
+            document.getElementById('audioName').style.display = 'block';
+            document.getElementById('audioName').innerText = `🎵 Track: ${file.name.substring(0, 25)}`;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+              audioContext = new (window.AudioContext || window.webkitAudioContext)();
+              audioContext.decodeAudioData(evt.target.result, function(buffer) {
+                selectedAudioBuffer = buffer;
+              });
+            };
+            reader.readAsArrayBuffer(file);
+          }
+        });
+
+        // Register Service Worker for PWA offline support
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('sw.js').then(registration => {
+            console.log('Service Worker registered successfully:', registration);
+          }).catch(error => {
+            console.log('Service Worker registration failed:', error);
+          });
+        }
+
+        canvas.renderAll();
+
+        debugBox.style.background = '#e8f5e9';
+        debugBox.style.color = '#2e7d32';
+        debugBox.style.borderColor = '#81c784';
+        debugBox.innerHTML = "✅ <b>Success:</b> Fabric.js runtime initialized and active functions fully mapped!";
+        
+        setTimeout(() => { debugBox.style.display = 'none'; }, 3000);
+
+        // Initialize layer buttons state
+        updateLayerButtonsState();
+
+      } catch (err) {
+        debugBox.style.background = '#ffebee';
+        debugBox.style.color = '#c62828';
+        debugBox.innerHTML = `<div>❌ <b>Init Crash:</b> ${err.message}</div>`;
+      }
+    });
+  </script>
+</body>
+</html>
