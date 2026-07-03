@@ -208,6 +208,14 @@
       font-weight: 600;
       color: var(--primary);
     }
+
+    #applyLayoutBtn {
+      display: none;
+    }
+
+    #circleOption {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -259,14 +267,14 @@
       <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
         <div style="flex:1;">
           <select id="layoutSelect">
-            <option value="circle">Circle</option>
+            <option id="circleOption" value="circle">Circle</option>
             <option value="grid">Grid</option>
             <option value="fan">Fan</option>
             <option value="stack">Stack</option>
             <option value="random">Random</option>
           </select>
         </div>
-        <button class="btn btn-accent" onclick="applySelectedLayout()" style="flex:0 0 140px;">🔀 Apply Layout</button>
+        <button id="applyLayoutBtn" class="btn btn-accent" onclick="applySelectedLayout()" style="flex:0 0 140px;">🔀 Apply Layout</button>
         <button class="btn btn-secondary" onclick="applyMixLayout()" style="flex:0 0 120px; margin-left:6px;">🔁 Cycle Layout</button>
       </div>
 
