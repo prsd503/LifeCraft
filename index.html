@@ -238,7 +238,13 @@
           <span>🔍 Size</span>
           <input type="range" id="scaleSlider" min="0.1" max="2" step="0.05" value="1">
         </div>
-        <button class="btn btn-danger" style="width: 100%;" onclick="deleteSelectedObj()">🗑️ Remove Photo</button>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <button class="btn btn-secondary" style="flex:1;" onclick="bringForwardSelected()">⬆️ Move Forward</button>
+          <button class="btn btn-secondary" style="flex:1;" onclick="sendBackwardSelected()">⬇️ Move Back</button>
+          <button class="btn btn-accent" style="flex:1;" onclick="bringToFrontSelected()">⤴️ Bring to Front</button>
+          <button class="btn btn-accent" style="flex:1;" onclick="sendToBackSelected()">⤵️ Send to Back</button>
+        </div>
+        <button class="btn btn-danger" style="width: 100%; margin-top:8px;" onclick="deleteSelectedObj()">🗑️ Remove Photo</button>
       </div>
     </div>
 
@@ -356,9 +362,10 @@
       if(!canvas) return;
       let active = canvas.getActiveObject();
       if (active) {
-        uploadedImages = uploadedImages.filter(img => img !== active);
         canvas.remove(active);
         canvas.discardActiveObject();
+        updateUploadedImagesFromCanvas();
+        arrangeLayerOrder();
         canvas.renderAll();
         document.getElementById('statusLog').innerText = "Removed selected photo.";
       }
@@ -397,7 +404,7 @@
             });
             fabricImg.scaleToWidth(140);
             canvas.add(fabricImg);
-            uploadedImages.push(fabricImg);
+            updateUploadedImagesFromCanvas();
             arrangeLayerOrder();
             canvas.renderAll();
             document.getElementById('statusLog').innerText = "Photos successfully loaded!";
@@ -409,30 +416,88 @@
 
     function arrangeLayerOrder() {
       if(!canvas) return;
-      if (borderFrame) canvas.sendToBack(borderFrame);
-      uploadedImages.forEach(img => canvas.bringToFront(img));
-      if (textObject) canvas.bringToFront(textObject);
+      // Keep borderFrame at the very back, then place images in the order of uploadedImages array
+      const objs = canvas.getObjects();
+      // Ensure borderFrame exists and is at index 0
+      if (borderFrame && canvas.getObjects().indexOf(borderFrame) !== 0) {
+        try { canvas.sendToBack(borderFrame); } catch(e){}
+      }
+
+      // Place images in a stable stacking order: uploadedImages is considered bottom-to-top
+      for (let i = 0; i < uploadedImages.length; i++) {
+        const img = uploadedImages[i];
+        if (!img) continue;
+        // target index: leave room for borderFrame at index 0 when present
+        const baseIndex = borderFrame ? 1 : 0;
+        try { canvas.moveTo(img, baseIndex + i); } catch(e){}
+      }
+
+      // Put textObject on top if present
+      if (textObject && canvas.getObjects().indexOf(textObject) !== canvas.getObjects().length - 1) {
+        try { canvas.bringToFront(textObject); } catch(e){}
+      }
+
       canvas.renderAll();
     }
 
-    function generateRandomLayout() {
-      if (!canvas || uploadedImages.length === 0) return;
-      uploadedImages.forEach((img, index) => {
-        const sliceAngle = (360 / uploadedImages.length) * index;
-        const radian = (sliceAngle * Math.PI) / 180;
-        const targetX = (canvas.width / 2) + Math.cos(radian) * 60 - 70;
-        const targetY = (canvas.height / 2) + Math.sin(radian) * 60 - 90;
-        const randomTilt = Math.floor(Math.random() * 30) - 15;
+    // Rebuild uploadedImages array from canvas stacking order (bottom-to-top)
+    function updateUploadedImagesFromCanvas() {
+      if (!canvas) return;
+      uploadedImages = canvas.getObjects().filter(o => o.type === 'image');
+    }
 
-        img.animate('left', targetX, { duration: 400, onChange: canvas.renderAll.bind(canvas) });
-        img.animate('top', targetY, { duration: 400, onChange: canvas.renderAll.bind(canvas) });
-        img.animate('angle', randomTilt, {
-          duration: 400,
-          onChange: canvas.renderAll.bind(canvas),
-          easing: fabric.util.ease.easeOutBack
-        });
-      });
-      setTimeout(arrangeLayerOrder, 450);
+    // Layer manipulation helpers exposed to UI
+    function bringForwardSelected() {
+      if (!canvas) return;
+      const active = canvas.getActiveObject();
+      if (!active || active.type !== 'image') return;
+      try { canvas.bringForward(active); } catch(e){}
+      updateUploadedImagesFromCanvas();
+      arrangeLayerOrder();
+      canvas.renderAll();
+      document.getElementById('statusLog').innerText = "Moved image forward.";
+    }
+
+    function sendBackwardSelected() {
+      if (!canvas) return;
+      const active = canvas.getActiveObject();
+      if (!active || active.type !== 'image') return;
+      try { canvas.sendBackwards(active); } catch(e){}
+      updateUploadedImagesFromCanvas();
+      arrangeLayerOrder();
+      canvas.renderAll();
+      document.getElementById('statusLog').innerText = "Moved image backward.";
+    }
+
+    function bringToFrontSelected() {
+      if (!canvas) return;
+      const active = canvas.getActiveObject();
+      if (!active || active.type !== 'image') return;
+      try { canvas.bringToFront(active); } catch(e){}
+      updateUploadedImagesFromCanvas();
+      arrangeLayerOrder();
+      canvas.renderAll();
+      document.getElementById('statusLog').innerText = "Image brought to front.";
+    }
+
+    function sendToBackSelected() {
+      if (!canvas) return;
+      const active = canvas.getActiveObject();
+      if (!active || active.type !== 'image') return;
+      // Move to just above the borderFrame (if it exists) so border remains the outermost behind images
+      try {
+        if (borderFrame) {
+          const borderIndex = canvas.getObjects().indexOf(borderFrame);
+          const targetIndex = borderIndex >= 0 ? borderIndex + 1 : 0;
+          canvas.moveTo(active, targetIndex);
+        } else {
+          canvas.sendToBack(active);
+        }
+      } catch(e){}
+      updateUploadedImagesFromCanvas();
+      arrangeLayerOrder();
+      canvas.renderAll();
+      document.getElementById('statusLog').innerText = "Image sent to back (above frame).";
     }
 
     function applyThemeDecoration() {
@@ -487,6 +552,8 @@
         canvas.add(borderFrame);
       }
       updateCustomText();
+      updateUploadedImagesFromCanvas();
+      arrangeLayerOrder();
     }
 
     function updateCustomText() {
@@ -521,6 +588,7 @@
         textObject = new fabric.Text(textVal, textOptions);
         canvas.add(textObject);
       }
+      updateUploadedImagesFromCanvas();
       arrangeLayerOrder();
     }
 
