@@ -216,6 +216,13 @@
     #circleOption {
       display: none;
     }
+
+    .quick-layer-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
   </style>
 </head>
 <body>
@@ -232,6 +239,11 @@
     <div class="card">
       <div class="canvas-container-wrapper">
         <canvas id="collageCanvas" width="360" height="360"></canvas>
+      </div>
+
+      <div class="quick-layer-controls" id="quickLayerControls" style="display: none;">
+        <button class="btn btn-secondary" onclick="bringToFrontSelected()">⬆️ Bring Front</button>
+        <button class="btn btn-secondary" onclick="sendToBackSelected()">⬇️ Send Back</button>
       </div>
 
       <div class="transform-controls" id="transformControls">
@@ -375,10 +387,12 @@
     function onObjectSelected(e) {
       if (e.target && e.target.type === 'image') {
         document.getElementById('transformControls').style.display = 'block';
+        document.getElementById('quickLayerControls').style.display = 'grid';
         document.getElementById('angleSlider').value = Math.round(e.target.angle || 0);
         document.getElementById('scaleSlider').value = e.target.scaleX || 1;
       } else {
         document.getElementById('transformControls').style.display = 'none';
+        document.getElementById('quickLayerControls').style.display = 'none';
       }
     }
 
@@ -863,6 +877,7 @@
         canvas.on('selection:updated', onObjectSelected);
         canvas.on('selection:cleared', () => {
           document.getElementById('transformControls').style.display = 'none';
+          document.getElementById('quickLayerControls').style.display = 'none';
         });
 
         // Allow multiple selection with shift/touch
