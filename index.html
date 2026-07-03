@@ -779,14 +779,31 @@
         return;
       }
 
+      const textPadding = 12;
+
       let textOptions = {
-        fill: colorVal, textBackgroundColor: bgBarColorVal, fontFamily: fontVal,
-        textAlign: alignVal, fontSize: 20, fontWeight: 'bold', selectable: true
+        fill: colorVal, 
+        textBackgroundColor: bgBarColorVal, 
+        fontFamily: fontVal,
+        textAlign: alignVal, 
+        fontSize: 20, 
+        fontWeight: 'bold', 
+        selectable: true,
+        padding: textPadding
       };
 
-      if (alignVal === 'left') { textOptions.left = 20; textOptions.originX = 'left'; }
-      else if (alignVal === 'right') { textOptions.left = canvas.width - 20; textOptions.originX = 'right'; }
-      else { textOptions.left = canvas.width / 2; textOptions.originX = 'center'; }
+      if (alignVal === 'left') { 
+        textOptions.left = 20; 
+        textOptions.originX = 'left'; 
+      }
+      else if (alignVal === 'right') { 
+        textOptions.left = canvas.width - 20; 
+        textOptions.originX = 'right'; 
+      }
+      else { 
+        textOptions.left = canvas.width / 2; 
+        textOptions.originX = 'center'; 
+      }
 
       if (textObject) {
         textObject.set(textOptions);
@@ -797,8 +814,37 @@
         textObject = new fabric.Text(textVal, textOptions);
         canvas.add(textObject);
       }
+      
+      // Constrain text to canvas boundaries to ensure background stays within bounds
+      constrainTextToCanvas();
       updateUploadedImagesFromCanvas();
       arrangeLayerOrder();
+    }
+
+    function constrainTextToCanvas() {
+      if (!canvas || !textObject) return;
+      
+      const padding = 10;
+      const textWidth = textObject.getScaledWidth();
+      const textHeight = textObject.getScaledHeight();
+      
+      let left = textObject.left;
+      let top = textObject.top;
+      
+      // Constrain left position based on alignment
+      if (textObject.originX === 'left') {
+        left = Math.max(padding, Math.min(left, canvas.width - textWidth - padding));
+      } else if (textObject.originX === 'right') {
+        left = Math.max(textWidth + padding, Math.min(left, canvas.width - padding));
+      } else { // center
+        left = Math.max(textWidth / 2 + padding, Math.min(left, canvas.width - textWidth / 2 - padding));
+      }
+      
+      // Constrain top position
+      top = Math.max(textHeight / 2 + padding, Math.min(top, canvas.height - textHeight / 2 - padding));
+      
+      textObject.set({ left: left, top: top });
+      canvas.renderAll();
     }
 
     function downloadCollageImage() {
@@ -998,13 +1044,9 @@
         
         setTimeout(() => { debugBox.style.display = 'none'; }, 3000);
 
-        // Initialize layer buttons state
-        updateLayerButtonsState();
-
-      } catch (err) {
-        debugBox.style.background = '#ffebee';
-        debugBox.style.color = '#c62828';
-        debugBox.innerHTML = `<div>❌ <b>Init Crash:</b> ${err.message}</div>`;
+      } catch(err) {
+        debugBox.innerHTML = `⚠️ <b>Error:</b> ${err.message}`;
+        debugBox.style.display = 'block';
       }
     });
   </script>
