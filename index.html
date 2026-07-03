@@ -156,6 +156,8 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
+      font-size: 0.9rem;
+      min-height: 44px;
     }
 
     .btn-secondary { background: var(--secondary); }
@@ -168,7 +170,7 @@
       padding: 12px;
       border-radius: 10px;
       margin-top: 10px;
-      display: none;
+      display: block;
     }
 
     .range-flex {
@@ -222,6 +224,53 @@
       grid-template-columns: 1fr 1fr;
       gap: 10px;
       margin-bottom: 15px;
+      padding: 12px;
+      background: #f0f9f9;
+      border-radius: 10px;
+      border-left: 4px solid var(--secondary);
+    }
+
+    .quick-layer-controls .btn {
+      font-size: 0.85rem;
+      padding: 10px 12px;
+    }
+
+    .layer-control-label {
+      grid-column: 1 / -1;
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--secondary);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .disabled-state {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    @media (max-width: 480px) {
+      .btn {
+        font-size: 0.8rem;
+        padding: 10px 12px;
+        min-height: 40px;
+      }
+
+      .quick-layer-controls {
+        margin-top: 12px;
+        gap: 8px;
+        padding: 10px;
+      }
+
+      .quick-layer-controls .btn {
+        font-size: 0.75rem;
+        padding: 8px 10px;
+      }
+
+      .grid-buttons {
+        gap: 8px;
+      }
     }
   </style>
 </head>
@@ -241,9 +290,10 @@
         <canvas id="collageCanvas" width="360" height="360"></canvas>
       </div>
 
-      <div class="quick-layer-controls" id="quickLayerControls" style="display: none;">
-        <button class="btn btn-secondary" onclick="bringToFrontSelected()">⬆️ Bring Front</button>
-        <button class="btn btn-secondary" onclick="sendToBackSelected()">⬇️ Send Back</button>
+      <div class="quick-layer-controls" id="quickLayerControls">
+        <div class="layer-control-label">📑 Layer Management</div>
+        <button class="btn btn-secondary" id="bringFrontBtn" onclick="bringToFrontSelected()">⬆️ Bring Front</button>
+        <button class="btn btn-secondary" id="sendBackBtn" onclick="sendToBackSelected()">⬇️ Send Back</button>
       </div>
 
       <div class="transform-controls" id="transformControls">
@@ -384,15 +434,27 @@
     const layoutModes = ['circle','grid','fan','stack','random'];
     let currentLayoutIndex = 0; // cycles each button press
 
+    function updateLayerButtonsState() {
+      const hasImages = uploadedImages.length > 0;
+      const bringFrontBtn = document.getElementById('bringFrontBtn');
+      const sendBackBtn = document.getElementById('sendBackBtn');
+      
+      if (hasImages) {
+        bringFrontBtn.classList.remove('disabled-state');
+        sendBackBtn.classList.remove('disabled-state');
+      } else {
+        bringFrontBtn.classList.add('disabled-state');
+        sendBackBtn.classList.add('disabled-state');
+      }
+    }
+
     function onObjectSelected(e) {
       if (e.target && e.target.type === 'image') {
         document.getElementById('transformControls').style.display = 'block';
-        document.getElementById('quickLayerControls').style.display = 'grid';
         document.getElementById('angleSlider').value = Math.round(e.target.angle || 0);
         document.getElementById('scaleSlider').value = e.target.scaleX || 1;
       } else {
         document.getElementById('transformControls').style.display = 'none';
-        document.getElementById('quickLayerControls').style.display = 'none';
       }
     }
 
@@ -404,6 +466,7 @@
         canvas.discardActiveObject();
         updateUploadedImagesFromCanvas();
         arrangeLayerOrder();
+        updateLayerButtonsState();
         canvas.renderAll();
         document.getElementById('statusLog').innerText = "Removed selected photo.";
       }
@@ -416,6 +479,7 @@
       uploadedImages = [];
       textObject = null;
       borderFrame = null;
+      updateLayerButtonsState();
       document.getElementById('statusLog').innerText = "Cleared all photos!";
     }
 
@@ -444,6 +508,7 @@
             canvas.add(fabricImg);
             updateUploadedImagesFromCanvas();
             arrangeLayerOrder();
+            updateLayerButtonsState();
             canvas.renderAll();
             document.getElementById('statusLog').innerText = "Photos successfully loaded!";
           });
@@ -877,7 +942,6 @@
         canvas.on('selection:updated', onObjectSelected);
         canvas.on('selection:cleared', () => {
           document.getElementById('transformControls').style.display = 'none';
-          document.getElementById('quickLayerControls').style.display = 'none';
         });
 
         // Allow multiple selection with shift/touch
@@ -931,6 +995,9 @@
         debugBox.innerHTML = "✅ <b>Success:</b> Fabric.js runtime initialized and active functions fully mapped!";
         
         setTimeout(() => { debugBox.style.display = 'none'; }, 3000);
+
+        // Initialize layer buttons state
+        updateLayerButtonsState();
 
       } catch (err) {
         debugBox.style.background = '#ffebee';
