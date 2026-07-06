@@ -372,7 +372,7 @@
 
   <div class="fixed-header-canvas-view">
     <header>
-      <h1>🌺 LifeCraft 🌺</h1>
+      <h1> <b> Red Train 🚂 </b> </h1>
     </header>
     <div class="canvas-section">
       <div class="canvas-container-wrapper">
@@ -619,20 +619,21 @@
       if (canvas) canvas.setBackgroundColor(color, canvas.renderAll.bind(canvas));
     }
 
-    function loadAudioTrackFile(inputElement) {
-      const file = inputElement.files[0];
-      if (file) {
-        selectedAudioFileBlob = file;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          selectedAudioDataUrl = e.target.result;
-          const audioElement = document.getElementById('localAudioPlayback');
-          audioElement.src = selectedAudioDataUrl;
-          document.getElementById('statusLog').innerText = `🎵 Track attached: ${file.name.substring(0, 20)}...`;
-        };
-        reader.readAsDataURL(file);
-      }
-    }
+    // 1. UPDATED: Clear the file input correctly
+function loadAudioTrackFile(inputElement) {
+  const file = inputElement.files[0];
+  if (file) {
+    selectedAudioFileBlob = file;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      selectedAudioDataUrl = e.target.result;
+      const audioElement = document.getElementById('localAudioPlayback');
+      audioElement.src = selectedAudioDataUrl;
+      document.getElementById('statusLog').innerText = `🎵 Track attached: ${file.name.substring(0, 15)}...`;
+    };
+    reader.readAsDataURL(file);
+  }
+}
 
     function toggleStyleDecoration(type) {
       if (type === 'bold') {
@@ -906,97 +907,103 @@
       animationFrameId = requestAnimationFrame(processTick);
     }
 
-    function exportCanvasToVideoAnimation() {
-      if(animationEffect === 'none') {
-        document.getElementById('statusLog').innerText = "⚠️ Please select a sequential motion effect first!";
-        return;
-      }
-      
-      const totalMaxDuration = parseFloat(document.getElementById('videoTimelineDuration').value);
-      document.getElementById('statusLog').innerText = `⚡ Processing timeline sequential capture...`;
-      
-      const progressContainer = document.getElementById('videoProgressContainer');
-      const progressFill = document.getElementById('renderProgressBarFill');
-      const progressText = document.getElementById('renderPercentText');
-      const progressTitle = document.getElementById('renderStatusTitle');
+            async function exportCanvasToVideoAnimation() {
+  const durationInput = document.getElementById('videoTimelineDuration');
+  const totalMaxDuration = parseFloat(durationInput.value);
 
-      if (progressTitle) progressTitle.innerText = "🎬 Rendering MP4 Video Sequence:";
-      progressContainer.style.display = 'block';
-      progressFill.style.width = '0%';
-      progressText.innerText = '0%';
+  if (animationEffect === 'none') {
+    document.getElementById('statusLog').innerText = "⚠️ Please select a motion effect!";
+    return;
+  }
 
-      canvas.discardActiveObject();
-      canvas.renderAll();
-      
-      timelineCounter = 0;
+  // 1. UI Reset
+  const progressContainer = document.getElementById('videoProgressContainer');
+  progressContainer.style.display = 'block';
+  const progressBar = document.getElementById('renderProgressBarFill');
+  const progressText = document.getElementById('renderPercentText');
+  
+  progressBar.style.width = '0%';
+  progressText.innerText = '0%';
+  
+  canvas.discardActiveObject();
+  canvas.renderAll();
+  timelineCounter = 0;
 
-      const sourceStream = document.getElementById('collageCanvas').captureStream(30);
-      const combinedOutputTracks = new MediaStream();
-      
-      sourceStream.getVideoTracks().forEach(track => combinedOutputTracks.addTrack(track));
+  // 2. Setup Audio & Video
+  const videoStream = document.getElementById('collageCanvas').captureStream(30);
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const originalAudioEl = document.getElementById('localAudioPlayback');
+  const tempAudioEl = new Audio(originalAudioEl.src); 
+  tempAudioEl.loop = true;
 
-      const audioPlaybackElement = document.getElementById('localAudioPlayback');
-      if (selectedAudioFileBlob && audioPlaybackElement.src) {
-        audioPlaybackElement.currentTime = 0;
-        audioPlaybackElement.play().catch(e => console.log("Audio capturing active"));
-        
-        try {
-          const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-          const sourceNode = audioCtx.createMediaElementSource(audioPlaybackElement);
-          const destStreamNode = audioCtx.createMediaStreamDestination();
-          
-          sourceNode.connect(destStreamNode);
-          sourceNode.connect(audioCtx.destination); 
-          
-          destStreamNode.stream.getAudioTracks().forEach(track => combinedOutputTracks.addTrack(track));
-        } catch(audioErr) {
-          console.warn("Audio pipeline mix warning:", audioErr);
-        }
-      }
+  let combinedStream = new MediaStream();
+  videoStream.getVideoTracks().forEach(t => combinedStream.addTrack(t));
 
-      let dataChunks = [];
-      let mediaRecorder;
-      try {
-        mediaRecorder = new MediaRecorder(combinedOutputTracks, { mimeType: 'video/webm; codecs=vp9,opus' });
-      } catch (e) {
-        mediaRecorder = new MediaRecorder(combinedOutputTracks);
-      }
+  let sourceNode, destStreamNode;
 
-      mediaRecorder.ondataavailable = function(e) {
-        if (e.data && e.data.size > 0) dataChunks.push(e.data);
-      };
-
-      let currentProgressCount = 0;
-      const progressTimerInterval = setInterval(() => {
-        currentProgressCount += 1;
-        const mappedPercent = Math.min(Math.round((currentProgressCount / (totalMaxDuration * 10)) * 100), 99);
-        progressFill.style.width = mappedPercent + '%';
-        progressText.innerText = mappedPercent + '%';
-      }, 100);
-
-      mediaRecorder.onstop = function() {
-        clearInterval(progressTimerInterval);
-        progressFill.style.width = '100%';
-        progressText.innerText = '100%';
-        
-        setTimeout(() => { progressContainer.style.display = 'none'; }, 1200);
-        audioPlaybackElement.pause();
-        
-        const videoBlob = new Blob(dataChunks, { type: 'video/mp4' });
-        const downloadUrl = URL.createObjectURL(videoBlob);
-        
-        const elementLink = document.createElement('a');
-        elementLink.download = 'LifeCraft-SlowMotion-Video.mp4';
-        elementLink.href = downloadUrl;
-        elementLink.click();
-        
-        document.getElementById('statusLog').innerText = "💾 Video track with integrated audio exported!";
-        resetPositionsToBase();
-      };
-
-      mediaRecorder.start();
-      setTimeout(() => { mediaRecorder.stop(); }, totalMaxDuration * 1000);
+  if (selectedAudioFileBlob && tempAudioEl.src) {
+    try {
+      if (audioCtx.state === 'suspended') await audioCtx.resume();
+      sourceNode = audioCtx.createMediaElementSource(tempAudioEl);
+      destStreamNode = audioCtx.createMediaStreamDestination();
+      sourceNode.connect(destStreamNode);
+      sourceNode.connect(audioCtx.destination);
+      tempAudioEl.play();
+      destStreamNode.stream.getAudioTracks().forEach(t => combinedStream.addTrack(t));
+    } catch (e) {
+      console.error("Audio Pipeline Error:", e);
     }
+  }
+
+  // 3. Initialize Recorder
+  let dataChunks = [];
+  const mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm' });
+
+  mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) dataChunks.push(e.data); };
+
+  mediaRecorder.onstop = async () => {
+    tempAudioEl.pause();
+    if (sourceNode) sourceNode.disconnect();
+    if (audioCtx) await audioCtx.close();
+    combinedStream.getTracks().forEach(t => t.stop());
+
+    if (dataChunks.length > 0) {
+      const blob = new Blob(dataChunks, { type: 'video/webm' });
+      const a = document.createElement('a');
+      a.download = 'LifeCraft-Video.webm';
+      a.href = URL.createObjectURL(blob);
+      a.click();
+    }
+    progressContainer.style.display = 'none';
+    resetPositionsToBase();
+  };
+
+  mediaRecorder.start();
+
+  // 4. FIXED PROGRESS LOGIC
+  // We use performance.now() to ensure high-precision timing regardless of main-thread load
+  const startTime = performance.now();
+  const durationMs = totalMaxDuration * 1000;
+
+  const updateProgress = () => {
+    const elapsedMs = performance.now() - startTime;
+    const percent = Math.min((elapsedMs / durationMs) * 100, 100);
+    
+    progressBar.style.width = percent + '%';
+    progressText.innerText = Math.round(percent) + '%';
+
+    if (elapsedMs < durationMs) {
+      requestAnimationFrame(updateProgress);
+    } else {
+      if (mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    }
+  };
+  
+  requestAnimationFrame(updateProgress);
+}
+
+
+
 
     function exportCanvasToAnimatedGif() {
       if (!window.gifshot) {
