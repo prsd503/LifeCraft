@@ -635,6 +635,25 @@ function loadAudioTrackFile(inputElement) {
   }
 }
 
+function addBrandWatermark() {
+  const brandText = new fabric.Text("Red Train", {
+    fontFamily: 'Caveat',
+    fontSize: 24,
+    fontWeight: 'bold',
+    fill: '#FF6B6B', // Matches your primary brand color
+    originX: 'right',
+    originY: 'top',
+    left: 350,
+    top: 10,
+    selectable: false,
+    evented: false
+  });
+  canvas.add(brandText);
+  canvas.renderAll();
+  return brandText; 
+}
+
+
     function toggleStyleDecoration(type) {
       if (type === 'bold') {
         isBold = !isBold;
@@ -916,7 +935,7 @@ function loadAudioTrackFile(inputElement) {
     return;
   }
 
-  // 1. UI Reset
+  // 1. UI Reset & Branding
   const progressContainer = document.getElementById('videoProgressContainer');
   progressContainer.style.display = 'block';
   const progressBar = document.getElementById('renderProgressBarFill');
@@ -926,6 +945,7 @@ function loadAudioTrackFile(inputElement) {
   progressText.innerText = '0%';
   
   canvas.discardActiveObject();
+  const watermark = addBrandWatermark(); // <--- ADDED HERE
   canvas.renderAll();
   timelineCounter = 0;
 
@@ -967,10 +987,14 @@ function loadAudioTrackFile(inputElement) {
     if (audioCtx) await audioCtx.close();
     combinedStream.getTracks().forEach(t => t.stop());
 
+    // --- CLEANUP BRANDING ---
+    canvas.remove(watermark); 
+    canvas.renderAll();
+
     if (dataChunks.length > 0) {
       const blob = new Blob(dataChunks, { type: 'video/webm' });
       const a = document.createElement('a');
-      a.download = 'LifeCraft-Video.webm';
+      a.download = 'RedTrain-Video.webm'; // Renamed for branding
       a.href = URL.createObjectURL(blob);
       a.click();
     }
@@ -980,8 +1004,7 @@ function loadAudioTrackFile(inputElement) {
 
   mediaRecorder.start();
 
-  // 4. FIXED PROGRESS LOGIC
-  // We use performance.now() to ensure high-precision timing regardless of main-thread load
+  // 4. Progress Logic
   const startTime = performance.now();
   const durationMs = totalMaxDuration * 1000;
 
@@ -1001,6 +1024,7 @@ function loadAudioTrackFile(inputElement) {
   
   requestAnimationFrame(updateProgress);
 }
+
 
 
 
@@ -1236,14 +1260,20 @@ function loadAudioTrackFile(inputElement) {
     }
 
     function downloadCollageImage() {
-      canvas.discardActiveObject();
-      canvas.renderAll();
-      const dataURL = canvas.toDataURL({ format: 'jpeg', quality: 1.0, multiplier: 2 });
-      const link = document.createElement('a');
-      link.download = 'LifeCraft-Studio.jpg';
-      link.href = dataURL;
-      link.click();
-    }
+  canvas.discardActiveObject();
+  const watermark = addBrandWatermark(); // Add
+  canvas.renderAll();
+  
+  const dataURL = canvas.toDataURL({ format: 'jpeg', quality: 1.0, multiplier: 2 });
+  const link = document.createElement('a');
+  link.download = 'RedTrain-Studio.jpg';
+  link.href = dataURL;
+  link.click();
+  
+  canvas.remove(watermark); // Clean up
+  canvas.renderAll();
+}
+
   </script>
 </body>
 </html>
