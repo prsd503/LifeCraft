@@ -442,4 +442,1020 @@
     <span class="fp-fredoka">a</span><span class="fp-pacifico">a</span>
     <span class="fp-lobster">a</span><span class="fp-marker">a</span>
     <span class="fp-bangers">a</span><span class="fp-cinzel">a</span>
-    <span class="fp-playfair">a</span><span class="fp-sacramento">a</spa
+    <span class="fp-playfair">a</span><span class="fp-sacramento">a</span>
+    </div>
+
+  <div class="fixed-header-canvas-view">
+    <header>
+      
+    <div class="canvas-section">
+      <div class="canvas-container-wrapper">
+        <canvas id="collageCanvas" width="360" height="360"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="scrollable-controls-container">
+    
+   <!--   <div id="runtimeDebugLog" style="display:none;">Initializing workspace context...</div>-->
+
+    <div class="card">
+      <h3>📑 Layer Management</h3>
+      <div class="quick-layer-controls">
+        <button class="btn btn-secondary" onclick="bringToFrontSelected()">⬆️ Bring Front</button>
+        <button class="btn btn-secondary" onclick="sendToBackSelected()">⬇️ Send Back</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🎉 Default Event Themes</h3>
+      <label>Select an automated celebration template setup:</label>
+      <div class="horizontal-scroll">
+        <button class="thumb-btn" style="background:#fff3e0; color:#e65100;" onclick="applyPresetTheme('birthday')">🎂 Birthday</button>
+        <button class="thumb-btn" style="background:#fce4ec; color:#c2185b;" onclick="applyPresetTheme('wedding')">💍 Wedding</button>
+        <button class="thumb-btn" style="background:#e8f5e9; color:#2e7d32;" onclick="applyPresetTheme('travel')">✈️ Travel</button>
+        <button class="thumb-btn" style="background:#e1f5fe; color:#0288d1;" onclick="applyPresetTheme('party')">🎆 Neon Party</button>
+        <button class="thumb-btn" style="background:#f5f5f5;" onclick="applyPresetTheme('clear')">🍃 None</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>📸 Media Import & Build Layout</h3>
+      <div class="grid-buttons">
+        <button class="btn" onclick="document.getElementById('galleryLoader').click()">🖼️ Add Gallery Images</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('cameraInput').click()">📸 Take Camera Photo</button>
+      </div>
+      
+      <input type="file" id="galleryLoader" class="hidden-input" accept="image/*" multiple>
+      <input type="file" id="cameraInput" class="hidden-input" accept="image/*" capture="environment">
+
+      <div class="grid-buttons">
+        <button class="btn btn-danger" style="grid-column: 1 / -1;" onclick="clearAllImages()">🚨 Reset Canvas Workspace</button>
+      </div>
+
+      <div class="control-group">
+        <label for="customText">Custom Layer Banner Text</label>
+        <input type="text" id="customText" placeholder="#selfie#smile @Studio" oninput="updateCustomText()">
+        
+        <div class="text-format-bar">
+          <div class="color-picker-wrapper"><input type="color" id="textColor" value="#ffffff" onchange="updateCustomText()"></div>
+          <div class="color-picker-wrapper"><input type="color" id="textBgColor" value="#ff9800" onchange="changeBannerBgColor()"></div>
+          
+          <select id="fontStyle" onchange="updateCustomText()">
+            <optgroup label="Modern Sans-Serif">
+              <option value="Montserrat" selected>Montserrat</option>
+              <option value="Fredoka One">Fredoka One</option>
+            </optgroup>
+            <optgroup label="Stylized & Script">
+              <option value="Caveat">Caveat (Handwriting)</option>
+              <option value="Pacifico">Pacifico (Retro Brush)</option>
+              <option value="Lobster">Lobster (Bold Script)</option>
+              <option value="Sacramento">Sacramento (Thin Script)</option>
+            </optgroup>
+            <optgroup label="Artistic Display">
+              <option value="Permanent Marker">Permanent Marker</option>
+              <option value="Bangers">Bangers (Comic Book)</option>
+            </optgroup>
+            <optgroup label="Classic Serif">
+              <option value="Cinzel">Cinzel (Elegant Caps)</option>
+              <option value="Playfair Display">Playfair Display</option>
+            </optgroup>
+          </select>
+
+          <div class="font-decor-group">
+            <button class="decor-toggle" id="btnBold" onclick="toggleStyleDecoration('bold')">B</button>
+            <button class="decor-toggle" id="btnItalic" style="font-style: italic;" onclick="toggleStyleDecoration('italic')">I</button>
+            <button class="decor-toggle" id="btnUnderline" style="text-decoration: underline;" onclick="toggleStyleDecoration('underline')">U</button>
+          </div>
+        </div>
+        <div style="margin-top:10px;">
+          <button class="btn btn-accent" style="width:100%; min-height:36px; padding:6px;" onclick="alignAndSnapTextBackground()">🎯 Align & Snap Text Banner</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🎛️ Filters & Image Adjustments</h3>
+      <div class="horizontal-scroll">
+        <button class="thumb-btn" onclick="applyFilterPreset('none')">Original</button>
+        <button class="thumb-btn" style="background:#fce4ec;" onclick="applyFilterPreset('pink')">🌸 PINK</button>
+        <button class="thumb-btn" style="background:#ffe0b2;" onclick="applyFilterPreset('warm')">☀️ WARM</button>
+        <button class="thumb-btn" style="background:#e0f7fa;" onclick="applyFilterPreset('cool')">❄️ COOL</button>
+        <button class="thumb-btn" style="background:#b2dfdb;" onclick="applyFilterPreset('vintage')">🎞️ VINTAGE</button>
+      </div>
+      <div class="control-group" style="margin-top: 10px;">
+        <div class="range-flex"><span>☀️ Brightness</span><input type="range" id="filterBrightness" min="-100" max="100" step="5" value="0" oninput="applyManualAdjustments()"></div>
+        <div class="range-flex"><span>☯️ Contrast</span><input type="range" id="filterContrast" min="-100" max="100" step="5" value="0" oninput="applyManualAdjustments()"></div>
+        <div class="range-flex"><span>🧪 Saturation</span><input type="range" id="filterSaturation" min="-100" max="100" step="5" value="0" oninput="applyManualAdjustments()"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🐱 Emoji & Stickers Panel</h3>
+      <div class="horizontal-scroll" style="background: #fafafa; border-radius: 8px; padding: 10px;">
+        <span class="sticker-item" onclick="addStickerToCanvas('🐱')">🐱</span>
+        <span class="sticker-item" onclick="addStickerToCanvas('🕶️')">🕶️</span>
+        <span class="sticker-item" onclick="addStickerToCanvas('👑')">👑</span>
+        <span class="sticker-item" onclick="addStickerToCanvas('❤️')">❤️</span>
+        <span class="sticker-item" onclick="addStickerToCanvas('✨')">✨</span>
+        <span class="sticker-item" onclick="addStickerToCanvas('🎉')">🎉</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>🎞️ Motion Video & Animation Exporter</h3>
+      <div class="control-group" style="margin-bottom: 15px;">
+        <div class="range-flex">
+          <span>⏱️ Video Duration:</span>
+          <input type="range" id="videoTimelineDuration" min="2" max="30" step="1" value="6" oninput="updateDurationLabel(this.value)">
+          <b id="durationDisplayLabel" style="min-width: 45px; color: var(--purple);">6s</b>
+        </div>
+      </div>
+
+      <label>Choose Sequential Storytelling Effects:</label>
+      <div class="horizontal-scroll">
+        <button id="motionNone" class="thumb-btn active" onclick="setAnimationEffect('none')">Static Image</button>
+        <button id="motionFadeStep" class="thumb-btn" onclick="setAnimationEffect('fadeStep')">⏱️ One-by-One Appear</button>
+        <button id="motionRollStep" class="thumb-btn" onclick="setAnimationEffect('rollStep')">🔄 Roll Single Entry</button>
+        <button id="motionPopStep" class="thumb-btn" onclick="setAnimationEffect('popStep')">🔍 Zoom Pop Step</button>
+      </div>
+      
+      <div class="control-group" style="margin-top: 12px;">
+        <label for="videoAudioTrack">🎵 Optional Video Background Audio Track</label>
+        <input type="file" id="videoAudioTrack" class="styled-audio" accept="audio/*" onchange="loadAudioTrackFile(this)">
+        <audio id="localAudioPlayback" style="display:none;" loop></audio>
+      </div>
+    </div>
+
+    <div class="card" style="border-top: 4px solid var(--purple); margin-bottom: 30px;">
+      <h3>💾 Studio Export & Delivery Panel</h3>
+      <div class="grid-buttons" style="margin-top: 5px; margin-bottom: 5px;">
+        <button class="btn btn-secondary" onclick="downloadCollageImage()">💾 Save Image (JPG)</button>
+        <button class="btn btn-purple" onclick="exportCanvasToVideoAnimation()">🎥 Download Video (MP4)</button>
+      </div>
+      <div class="grid-buttons" style="margin-top: 5px; margin-bottom: 5px;">
+    <div hidden>   <button class="btn btn-accent" style="grid-column: 1 / -1; background: linear-gradient(45deg, #FF6B6B, #8E44AD); color: white;" onclick="exportCanvasToAnimatedGif()">🎞️ Download Animation (GIF)</button>
+      </div> </div>
+      <div class="status-log" id="statusLog">Studio loaded. Ready to build collage compositions.</div>
+    </div>
+
+  </div>
+
+  <div class="rendering-progress-container" id="videoProgressContainer">
+    <div><span id="renderStatusTitle">🎬 Rendering MP4 Video Sequence:</span> <span id="renderPercentText">0%</span></div>
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="renderProgressBarFill"></div>
+    </div>
+  </div>
+
+  <script>
+    if (window.fabric) {
+      fabric.enableGLFiltering = false;
+      fabric.isWebglSupported = false;
+    }
+
+    let canvas;
+    let uploadedImages = [];
+    let themeDecorations = [];
+    let textGroupBanner = null; 
+    let selectedAudioFileBlob = null;
+    let selectedAudioDataUrl = null; 
+
+    let isBold = false;
+    let isItalic = false;
+    let isUnderline = false;
+
+    let animationEffect = 'none';
+    let animationFrameId = null;
+    let timelineCounter = 0;
+    let isUserInteracting = false; 
+
+    window.addEventListener('load', () => {
+      try {
+        canvas = new fabric.Canvas('collageCanvas', {
+          width: 360,
+          height: 360,
+          backgroundColor: '#ffffff',
+          preserveObjectStacking: true
+        });
+
+        canvas.on('mouse:down', function(options) {
+          if (options.target && animationEffect !== 'none') {
+            isUserInteracting = true;
+            resetPositionsToBase(); 
+          }
+        });
+
+        canvas.on('object:modified', function(options) {
+          const obj = options.target;
+          if (obj && obj._baseProps) {
+            obj._baseProps.left = obj.left;
+            obj._baseProps.top = obj.top;
+            obj._baseProps.scaleX = obj.scaleX;
+            obj._baseProps.scaleY = obj.scaleY;
+            obj._baseProps.angle = obj.angle;
+          }
+          isUserInteracting = false;
+        });
+
+        canvas.on('selection:cleared', function() {
+          isUserInteracting = false;
+        });
+
+        document.getElementById('galleryLoader').addEventListener('change', function(e) {
+          handleImageFiles(e.target.files);
+        });
+
+        document.getElementById('cameraInput').addEventListener('change', function(e) {
+          if (e.target.files && e.target.files[0]) {
+            document.getElementById('statusLog').innerText = "Capturing phone camera snapshot...";
+            handleImageFiles([e.target.files[0]]);
+          }
+        });
+
+        kickoffAnimationRenderLoop();
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
+    function updateDurationLabel(val) {
+      document.getElementById('durationDisplayLabel').innerText = val + 's';
+    }
+
+    function changeBackdrop(colorHexOrEnv) {
+      let color = '#ffffff';
+      if (colorHexOrEnv === 'nature') color = '#e8f5e9';
+      if (colorHexOrEnv === 'fantasy') color = '#f3e5f5';
+      if (colorHexOrEnv === 'travel') color = '#e0f7fa';
+      if (colorHexOrEnv === 'landscape') color = '#efebe9';
+      if (colorHexOrEnv === 'none') color = '#ffffff';
+      if (canvas) canvas.setBackgroundColor(color, canvas.renderAll.bind(canvas));
+    }
+
+    // 1. UPDATED: Clear the file input correctly
+function loadAudioTrackFile(inputElement) {
+  const file = inputElement.files[0];
+  if (file) {
+    selectedAudioFileBlob = file;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      selectedAudioDataUrl = e.target.result;
+      const audioElement = document.getElementById('localAudioPlayback');
+      audioElement.src = selectedAudioDataUrl;
+      document.getElementById('statusLog').innerText = `🎵 Track attached: ${file.name.substring(0, 15)}...`;
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function addBrandWatermark() {
+  const brandText = new fabric.Text("Red Train", {
+    fontFamily: 'Caveat',
+    fontSize: 24,
+    fontWeight: 'bold',
+    fill: '#FF6B6B', // Matches your primary brand color
+    originX: 'right',
+    originY: 'top',
+    left: 350,
+    top: 10,
+    selectable: false,
+    evented: false
+  });
+  canvas.add(brandText);
+  canvas.renderAll();
+  return brandText; 
+}
+
+
+    function toggleStyleDecoration(type) {
+      if (type === 'bold') {
+        isBold = !isBold;
+        document.getElementById('btnBold').classList.toggle('active', isBold);
+      } else if (type === 'italic') {
+        isItalic = !isItalic;
+        document.getElementById('btnItalic').classList.toggle('active', isItalic);
+      } else if (type === 'underline') {
+        isUnderline = !isUnderline;
+        document.getElementById('btnUnderline').classList.toggle('active', isUnderline);
+      }
+      updateCustomText();
+    }
+
+    function updateCustomText() {
+      const val = document.getElementById('customText').value;
+      if (!val) {
+        if (textGroupBanner) {
+          canvas.remove(textGroupBanner);
+          textGroupBanner = null;
+        }
+        canvas.renderAll();
+        return;
+      }
+
+      const txtColor = document.getElementById('textColor').value;
+      const bgColor = document.getElementById('textBgColor').value;
+      const fStyle = document.getElementById('fontStyle').value;
+
+      let currentLeft = 180;
+      let currentTop = 315;
+      if (textGroupBanner) {
+        currentLeft = textGroupBanner.left;
+        currentTop = textGroupBanner.top;
+        canvas.remove(textGroupBanner);
+      }
+
+      const newText = new fabric.Textbox(val, {
+        fontSize: 16,
+        fill: txtColor,
+        fontFamily: fStyle,
+        fontWeight: isBold ? 'bold' : 'normal',
+        fontStyle: isItalic ? 'italic' : 'normal',
+        underline: isUnderline,
+        originX: 'center',
+        originY: 'center',
+        width: 310, 
+        textAlign: 'center',
+        splitByGrapheme: true 
+      });
+
+      document.fonts.load(`16px "${fStyle}"`).then(() => {
+        if (newText) {
+          newText.set('fontFamily', fStyle);
+          canvas.renderAll();
+        }
+      });
+
+      const newRect = new fabric.Rect({
+        width: newText.width + 24,
+        height: newText.height + 12,
+        fill: bgColor,
+        rx: 6,
+        ry: 6,
+        originX: 'center',
+        originY: 'center'
+      });
+
+      textGroupBanner = new fabric.Group([newRect, newText], {
+        left: currentLeft,
+        top: currentTop,
+        originX: 'center',
+        originY: 'center',
+        selectable: true
+      });
+
+      canvas.add(textGroupBanner);
+      canvas.bringToFront(textGroupBanner);
+      canvas.renderAll();
+    }
+
+    function changeBannerBgColor() {
+      if (textGroupBanner && textGroupBanner.item(0)) {
+        textGroupBanner.item(0).set('fill', document.getElementById('textBgColor').value);
+        canvas.renderAll();
+      } else {
+        updateCustomText();
+      }
+    }
+
+    function alignAndSnapTextBackground() {
+      if (!textGroupBanner) return;
+      textGroupBanner.set({ left: 180, top: 315 });
+      textGroupBanner.setCoords();
+      canvas.bringToFront(textGroupBanner);
+      canvas.renderAll();
+    }
+
+    function applyPresetTheme(theme) {
+      themeDecorations.forEach(obj => canvas.remove(obj));
+      themeDecorations = [];
+
+      if (theme === 'clear' || theme === 'none') {
+        document.getElementById('customText').value = "";
+        isBold = false; isItalic = false; isUnderline = false;
+        document.getElementById('btnBold').classList.remove('active');
+        document.getElementById('btnItalic').classList.remove('active');
+        document.getElementById('btnUnderline').classList.remove('active');
+        updateCustomText();
+        changeBackdrop('none');
+        return;
+      }
+
+      let bannerText = "";
+      let textColor = "#ffffff";
+      let bgColor = "#ff9800";
+      let fontType = "Montserrat";
+      
+      isBold = true; isItalic = false; isUnderline = false;
+      document.getElementById('btnBold').classList.add('active');
+      document.getElementById('btnItalic').classList.remove('active');
+      document.getElementById('btnUnderline').classList.remove('active');
+
+      if (theme === 'birthday') {
+        bannerText = "🎉 HAPPY BIRTHDAY 🎉";
+        textColor = "#ffffff";
+        bgColor = "#ff9800";
+        fontType = "Fredoka One";
+        changeBackdrop('fantasy');
+        addThemeDecorationSticker('🎂', 50, 50);
+        addThemeDecorationSticker('🎈', 310, 60);
+        addThemeDecorationSticker('🎁', 50, 260);
+      } else if (theme === 'wedding') {
+        bannerText = "💞 Just Married 💞";
+        textColor = "#ffffff";
+        bgColor = "#e91e63";
+        fontType = "Caveat";
+        isItalic = true;
+        document.getElementById('btnItalic').classList.add('active');
+        changeBackdrop('fantasy');
+        addThemeDecorationSticker('💍', 60, 60);
+        addThemeDecorationSticker('🌹', 300, 60);
+        addThemeDecorationSticker('🥂', 300, 260);
+      } else if (theme === 'travel') {
+        bannerText = "🌍 WANDERLUST EXPLORER";
+        textColor = "#2f2f2f";
+        bgColor = "#ffe66d";
+        fontType = "Montserrat";
+        changeBackdrop('travel');
+        addThemeDecorationSticker('✈️', 50, 50);
+        addThemeDecorationSticker('📸', 310, 70);
+        addThemeDecorationSticker('🏝️', 50, 250);
+      } else if (theme === 'party') {
+        bannerText = "🔥 EDM NIGHTS PRO 🔥";
+        textColor = "#00ffff";
+        bgColor = "#232323";
+        fontType = "Bangers"; 
+        canvas.setBackgroundColor('#121212', canvas.renderAll.bind(canvas));
+        addThemeDecorationSticker('🎆', 60, 60);
+        addThemeDecorationSticker('⚡', 300, 60);
+        addThemeDecorationSticker('🎵', 40, 250);
+      }
+
+      document.getElementById('customText').value = bannerText;
+      document.getElementById('textColor').value = textColor;
+      document.getElementById('textBgColor').value = bgColor;
+      document.getElementById('fontStyle').value = fontType;
+
+      updateCustomText();
+      alignAndSnapTextBackground();
+    }
+
+    function addThemeDecorationSticker(emoji, x, y) {
+      const sticker = new fabric.Text(emoji, {
+        fontSize: 35, left: x, top: y, originX: 'center', originY: 'center', selectable: true
+      });
+      canvas.add(sticker);
+      themeDecorations.push(sticker);
+      canvas.renderAll();
+    }
+
+    function addStickerToCanvas(emoji) {
+      const sticker = new fabric.Text(emoji, {
+        fontSize: 35, left: 180, top: 180, originX: 'center', originY: 'center', selectable: true,
+        cornerColor: '#4ECDC4', transparentCorners: false, cornerSize: 10
+      });
+      canvas.add(sticker);
+      themeDecorations.push(sticker);
+      canvas.setActiveObject(sticker);
+      canvas.renderAll();
+    }
+
+    function setAnimationEffect(effect) {
+      animationEffect = effect;
+      ['motionNone', 'motionFadeStep', 'motionRollStep', 'motionPopStep'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.classList.remove('active');
+      });
+      
+      const elId = 'motion' + effect.charAt(0).toUpperCase() + effect.slice(1);
+      const activeEl = document.getElementById(elId);
+      if(activeEl) activeEl.classList.add('active');
+      
+      timelineCounter = 0; 
+      resetPositionsToBase();
+    }
+
+    function resetPositionsToBase() {
+      uploadedImages.forEach(img => {
+        if(img._baseProps) {
+          img.set({
+            left: img._baseProps.left, top: img._baseProps.top,
+            scaleX: img._baseProps.scaleX, scaleY: img._baseProps.scaleY,
+            angle: img._baseProps.angle, opacity: 1
+          });
+        }
+      });
+      canvas.renderAll();
+    }
+
+    function kickoffAnimationRenderLoop() {
+      function processTick() {
+        const totalMaxDuration = parseFloat(document.getElementById('videoTimelineDuration').value);
+        
+        if (!isUserInteracting) {
+          timelineCounter += 0.0075; 
+          if (timelineCounter > totalMaxDuration) {
+            timelineCounter = 0;
+          }
+
+          if (animationEffect !== 'none' && uploadedImages.length > 0) {
+            const dynamicStaggerOffset = Math.min(2.0, (totalMaxDuration * 0.75) / uploadedImages.length);
+
+            uploadedImages.forEach((img, index) => {
+              if(!img._baseProps || canvas.getActiveObject() === img) return;
+
+              const delayOffset = index * dynamicStaggerOffset; 
+              const localTime = timelineCounter - delayOffset;
+
+              if (localTime < 0) {
+                img.set('opacity', 0);
+              } else {
+                img.set('opacity', 1);
+
+                if (animationEffect === 'fadeStep') {
+                  const progress = Math.min(localTime / 1.8, 1); 
+                  img.set('opacity', progress);
+                } 
+                else if (animationEffect === 'rollStep') {
+                  const progress = Math.min(localTime / 2.0, 1); 
+                  const startLeft = -180;
+                  const targetLeft = img._baseProps.left;
+                  
+                  img.set('left', startLeft + (targetLeft - startLeft) * progress);
+                  img.set('angle', (progress - 1) * 360);
+                } 
+                else if (animationEffect === 'popStep') {
+                  const progress = Math.min(localTime / 1.2, 1);
+                  const scaleFactor = progress === 1 ? 1 : Math.sin(progress * Math.PI / 2);
+                  img.set('scaleX', img._baseProps.scaleX * scaleFactor);
+                  img.set('scaleY', img._baseProps.scaleY * scaleFactor);
+                }
+              }
+            });
+            canvas.renderAll();
+          }
+        }
+        animationFrameId = requestAnimationFrame(processTick);
+      }
+      animationFrameId = requestAnimationFrame(processTick);
+    }
+
+            async function exportCanvasToVideoAnimation() {
+  const durationInput = document.getElementById('videoTimelineDuration');
+  const totalMaxDuration = parseFloat(durationInput.value);
+
+  if (animationEffect === 'none') {
+    document.getElementById('statusLog').innerText = "⚠️ Please select a motion effect!";
+    return;
+  }
+
+  // 1. UI Reset & Branding
+  const progressContainer = document.getElementById('videoProgressContainer');
+  progressContainer.style.display = 'block';
+  const progressBar = document.getElementById('renderProgressBarFill');
+  const progressText = document.getElementById('renderPercentText');
+  
+  progressBar.style.width = '0%';
+  progressText.innerText = '0%';
+  
+  canvas.discardActiveObject();
+  const watermark = addBrandWatermark(); // <--- ADDED HERE
+  canvas.renderAll();
+  timelineCounter = 0;
+
+  // 2. Setup Audio & Video
+  const videoStream = document.getElementById('collageCanvas').captureStream(30);
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const originalAudioEl = document.getElementById('localAudioPlayback');
+  const tempAudioEl = new Audio(originalAudioEl.src); 
+  tempAudioEl.loop = true;
+
+  let combinedStream = new MediaStream();
+  videoStream.getVideoTracks().forEach(t => combinedStream.addTrack(t));
+
+  let sourceNode, destStreamNode;
+
+  if (selectedAudioFileBlob && tempAudioEl.src) {
+    try {
+      if (audioCtx.state === 'suspended') await audioCtx.resume();
+      sourceNode = audioCtx.createMediaElementSource(tempAudioEl);
+      destStreamNode = audioCtx.createMediaStreamDestination();
+      sourceNode.connect(destStreamNode);
+      sourceNode.connect(audioCtx.destination);
+      tempAudioEl.play();
+      destStreamNode.stream.getAudioTracks().forEach(t => combinedStream.addTrack(t));
+    } catch (e) {
+      console.error("Audio Pipeline Error:", e);
+    }
+  }
+
+              // 3. Initialize Recorder
+  let dataChunks = [];
+  const mediaRecorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm' });
+
+  mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) dataChunks.push(e.data); };
+
+  mediaRecorder.onstop = async () => {
+    tempAudioEl.pause();
+    if (sourceNode) sourceNode.disconnect();
+    if (audioCtx) await audioCtx.close();
+    combinedStream.getTracks().forEach(t => t.stop());
+
+    // --- CLEANUP BRANDING ---
+    canvas.remove(watermark); 
+    canvas.renderAll();
+
+    if (dataChunks.length > 0) {
+      const blob = new Blob(dataChunks, { type: 'video/webm' });
+      const a = document.createElement('a');
+      a.download = 'RedTrain-Video.webm'; // Renamed for branding
+      a.href = URL.createObjectURL(blob);
+      a.click();
+    }
+    progressContainer.style.display = 'none';
+    resetPositionsToBase();
+  };
+
+  mediaRecorder.start();
+
+  // 4. Progress Logic
+  const startTime = performance.now();
+  const durationMs = totalMaxDuration * 1000;
+
+  const updateProgress = () => {
+    const elapsedMs = performance.now() - startTime;
+    const percent = Math.min((elapsedMs / durationMs) * 100, 100);
+    
+    progressBar.style.width = percent + '%';
+    progressText.innerText = Math.round(percent) + '%';
+
+    if (elapsedMs < durationMs) {
+      requestAnimationFrame(updateProgress);
+    } else {
+      if (mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+    }
+  };
+  
+  requestAnimationFrame(updateProgress);
+}
+
+
+
+
+
+    function exportCanvasToAnimatedGif() {
+      if (!window.gifshot) {
+        document.getElementById('statusLog').innerText = "❌ GifShot engine library hasn't loaded yet.";
+        return;
+      }
+
+      const totalMaxDuration = parseFloat(document.getElementById('videoTimelineDuration').value);
+      document.getElementById('statusLog').innerText = `⚡ Collecting precise frames for mobile compilation...`;
+      
+      const progressContainer = document.getElementById('videoProgressContainer');
+      const progressFill = document.getElementById('renderProgressBarFill');
+      const progressText = document.getElementById('renderPercentText');
+      const progressTitle = document.getElementById('renderStatusTitle');
+
+      if (progressTitle) progressTitle.innerText = "🎞️ Compiling Animation Sequence:";
+      progressContainer.style.display = 'block';
+      progressFill.style.width = '0%';
+      progressText.innerText = '0%';
+
+      canvas.discardActiveObject();
+      canvas.renderAll();
+
+      const totalFrames = Math.min(30, Math.round(totalMaxDuration * 5)); 
+      const timeStep = totalMaxDuration / totalFrames;
+      const frameDelaySecs = timeStep;
+      
+              isUserInteracting = true; 
+      let frameIndex = 0;
+      let collectedFrameDataUrls = [];
+
+      function captureNextFrame() {
+        if (frameIndex >= totalFrames) {
+          document.getElementById('statusLog').innerText = `🎨 Processing full 256-color LZW map compression...`;
+          
+          gifshot.createGIF({
+            images: collectedFrameDataUrls,
+            gifWidth: 360,
+            gifHeight: 360,
+            interval: parseFloat(frameDelaySecs.toFixed(2)) || 0.1, // Fixed: Force valid rounded decimal segment
+            numFrames: totalFrames,
+            sampleInterval: 10,
+            numWorkers: 2
+          }, function(obj) {
+            if(!obj.error) {
+              progressFill.style.width = '100%';
+              progressText.innerText = '100%';
+              
+              setTimeout(() => { progressContainer.style.display = 'none'; }, 1000);
+
+              isUserInteracting = false;
+              timelineCounter = 0;
+
+              const elementLink = document.createElement('a');
+              elementLink.download = 'LifeCraft-Animation.gif';
+              elementLink.href = obj.image;
+              elementLink.click();
+              
+              document.getElementById('statusLog').innerText = "💾 Mobile compatible standard GIF downloaded successfully!";
+              resetPositionsToBase();
+            } else {
+              document.getElementById('statusLog').innerText = "❌ GIF rendering pipeline failed.";
+              progressContainer.style.display = 'none';
+              isUserInteracting = false;
+            }
+          });
+          return;
+        }
+
+        timelineCounter = frameIndex * timeStep;
+        
+        if (animationEffect !== 'none' && uploadedImages.length > 0) {
+          const dynamicStaggerOffset = Math.min(2.0, (totalMaxDuration * 0.75) / uploadedImages.length);
+          uploadedImages.forEach((img, index) => {
+            if(!img._baseProps) return;
+            const delayOffset = index * dynamicStaggerOffset; 
+            const localTime = timelineCounter - delayOffset;
+
+            if (localTime < 0) {
+              img.set('opacity', 0);
+            } else {
+              img.set('opacity', 1);
+              if (animationEffect === 'fadeStep') {
+                const progress = Math.min(localTime / 1.8, 1); 
+                img.set('opacity', progress);
+              } else if (animationEffect === 'rollStep') {
+                const progress = Math.min(localTime / 2.0, 1); 
+                const startLeft = -180;
+                const targetLeft = img._baseProps.left;
+                img.set('left', startLeft + (targetLeft - startLeft) * progress);
+                img.set('angle', (progress - 1) * 360);
+              } else if (animationEffect === 'popStep') {
+                const progress = Math.min(localTime / 1.2, 1);
+                const scaleFactor = progress === 1 ? 1 : Math.sin(progress * Math.PI / 2);
+                img.set('scaleX', img._baseProps.scaleX * scaleFactor);
+                img.set('scaleY', img._baseProps.scaleY * scaleFactor);
+              }
+            }
+          });
+        }
+        
+        canvas.renderAll();
+        
+        // Grab instant crisp context screenshot
+        const currentFrameUrl = canvas.toDataURL({ format: 'png' });
+        collectedFrameDataUrls.push(currentFrameUrl);
+
+        const capturePercent = Math.round((frameIndex / totalFrames) * 60);
+        progressFill.style.width = capturePercent + '%';
+        progressText.innerText = capturePercent + '%';
+
+        frameIndex++;
+        setTimeout(captureNextFrame, 20);
+      }
+      
+      captureNextFrame();
+    }
+
+    function handleImageFiles(files) {
+      if(!canvas || !files.length) return;
+      for (let i = 0; i < files.length; i++) {
+        const reader = new FileReader();
+        reader.onload = function(e) { loadStringDataIntoFabricCanvas(e.target.result); };
+        reader.readAsDataURL(files[i]);
+      }
+    }
+
+    function loadStringDataIntoFabricCanvas(dataUrlString) {
+      fabric.Image.fromURL(dataUrlString, function(fabricImg) {
+        if(!fabricImg) return;
+        const index = uploadedImages.length;
+        
+        const targetLeft = 40 + (index * 30) % 150;
+        const targetTop = 40 + (index * 30) % 150;
+
+        fabricImg.set({
+          left: targetLeft, top: targetTop, cornerColor: '#4ECDC4',
+          transparentCorners: false, cornerSize: 10
+        });
+        fabricImg.scaleToWidth(140);
+        
+        fabricImg._baseProps = {
+          left: targetLeft, top: targetTop, scaleX: fabricImg.scaleX, scaleY: fabricImg.scaleY, angle: 0
+        };
+
+        if (fabricImg._element) {
+          fabricImg._originalElementRef = fabricImg._element;
+        }
+
+        canvas.add(fabricImg);
+        uploadedImages.push(fabricImg);
+        canvas.setActiveObject(fabricImg);
+        canvas.renderAll();
+      }, { crossOrigin: 'anonymous' });
+    }
+
+    function applyLocalNativeStyleFilters(targetImg, brightnessPercent, contrastPercent, saturationPercent, colorPresetType) {
+      if (!targetImg || !targetImg._originalElementRef) return;
+      
+      let filterString = `brightness(${100 + brightnessPercent}%) contrast(${100 + contrastPercent}%) saturate(${100 + saturationPercent}%)`;
+      
+      if (colorPresetType === 'pink') filterString += ' sepia(30%) hue-rotate(315deg) saturate(140%)';
+      if (colorPresetType === 'warm') filterString += ' sepia(25%) saturate(120%)';
+      if (colorPresetType === 'cool') filterString += ' hue-rotate(30deg) saturate(110%)';
+      if (colorPresetType === 'vintage') filterString += ' grayscale(70%) sepia(40%)';
+
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = targetImg._originalElementRef.naturalWidth || targetImg._originalElementRef.width;
+      tempCanvas.height = targetImg._originalElementRef.naturalHeight || targetImg._originalElementRef.height;
+      
+      const ctx = tempCanvas.getContext('2d');
+      if (ctx) {
+        ctx.filter = filterString;
+        ctx.drawImage(targetImg._originalElementRef, 0, 0);
+        
+        const updatedImgElement = new Image();
+        updatedImgElement.onload = function() {
+          targetImg._element = updatedImgElement;
+          canvas.renderAll();
+        };
+        updatedImgElement.src = tempCanvas.toDataURL();
+      }
+    }
+
+    function applyFilterPreset(type) {
+      let active = canvas.getActiveObject();
+      if (!active || active.type !== 'image') active = uploadedImages[0];
+      if (!active) return;
+      
+      document.getElementById('filterBrightness').value = 0;
+      document.getElementById('filterContrast').value = 0;
+      document.getElementById('filterSaturation').value = 0;
+      
+      applyLocalNativeStyleFilters(active, 0, 0, 0, type);
+    }
+
+    function applyManualAdjustments() {
+      let active = canvas.getActiveObject();
+      if (!active || active.type !== 'image') active = uploadedImages[0];
+      if (!active) return;
+      
+      const bri = parseInt(document.getElementById('filterBrightness').value);
+      const con = parseInt(document.getElementById('filterContrast').value);
+      const sat = parseInt(document.getElementById('filterSaturation').value);
+
+      applyLocalNativeStyleFilters(active, bri, con, sat, 'none');
+      
+    }
+
+    function bringToFrontSelected() { const a = canvas.getActiveObject(); if(a) { canvas.bringToFront(a); canvas.renderAll(); } }
+    function sendToBackSelected() { const a = canvas.getActiveObject(); if(a) { canvas.sendToBack(a); canvas.renderAll(); } }
+    
+    function clearAllImages() { 
+      if(animationFrameId) cancelAnimationFrame(animationFrameId);
+      canvas.clear(); 
+      uploadedImages = []; 
+      themeDecorations = [];
+      textGroupBanner = null;
+      animationEffect = 'none';
+      selectedAudioFileBlob = null;
+      selectedAudioDataUrl = null;
+      isBold = false; isItalic = false; isUnderline = false;
+      document.getElementById('btnBold').classList.remove('active');
+      document.getElementById('btnItalic').classList.remove('active');
+      document.getElementById('btnUnderline').classList.remove('active');
+      document.getElementById('videoAudioTrack').value = "";
+      document.getElementById('localAudioPlayback').removeAttribute('src');
+      canvas.setBackgroundColor('#ffffff', canvas.renderAll.bind(canvas)); 
+      
+      kickoffAnimationRenderLoop();
+    }
+
+    function downloadCollageImage() {
+  canvas.discardActiveObject();
+  const watermark = addBrandWatermark(); // Add
+  canvas.renderAll();
+  
+  const dataURL = canvas.toDataURL({ format: 'jpeg', quality: 1.0, multiplier: 2 });
+  const link = document.createElement('a');
+  link.download = 'RedTrain-Studio.jpg';
+  link.href = dataURL;
+  link.click();
+  
+  canvas.remove(watermark); // Clean up
+  canvas.renderAll();
+}
+
+  </script>
+</body>
+</html>
+
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+  
+  <style>
+    :root {
+      --brand-red: #E63946;
+      --brand-dark: #1D3557;
+      --brand-light: #F1FAEE;
+      --bg: #F8F9FA;
+    }
+
+    * { box-sizing: border-box; font-family: 'Inter', sans-serif; }
+
+    body { background-color: var(--bg); color: var(--brand-dark); margin: 0; padding-bottom: 80px; }
+
+    /* Branding Header */
+    .app-header {
+      background: white;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .app-header h1 {
+      font-family: 'Caveat', cursive;
+      font-size: 2rem;
+      color: var(--brand-red);
+      margin: 0;
+    }
+
+    /* Layout & Canvas */
+    .canvas-wrapper { display: flex; justify-content: center; padding: 20px; }
+    #collageCanvas { 
+      border-radius: 20px; 
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1); 
+      background: white; 
+      border: 1px solid #eee;
+    }
+
+    /* Buttons & UI Cards */
+    .card { background: white; margin: 15px; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+    h3 { font-family: 'Caveat', cursive; font-size: 1.4rem; margin: 0 0 15px 0; color: var(--brand-dark); }
+    
+    .btn {
+      background: var(--brand-dark);
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: background 0.2s;
+    }
+
+    .btn-red { background: var(--brand-red); }
+    .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  </style>
+</head>
+<body>
+
+  
+
+  
+  
+
+  <input type="file" id="galleryLoader" style="display:none;" accept="image/*" multiple>
+  <input type="file" id="cameraInput" style="display:none;" accept="image/*" capture="environment">
+
+  <script>
+    const canvas = new fabric.Canvas('collageCanvas', { backgroundColor: '#ffffff' });
+
+    function downloadCollageImage() {
+      // Add watermark before saving
+      const watermark = new fabric.Text("Red Train Studio", {
+        fontFamily: 'Caveat', fontSize: 20, fill: '#E63946',
+        left: 20, top: 330, selectable: false
+      });
+      canvas.add(watermark);
+      canvas.renderAll();
+      
+      const dataURL = canvas.toDataURL({ format: 'jpeg', quality: 0.9, multiplier: 2 });
+      const link = document.createElement('a');
+      link.download = 'RedTrain-Creation.jpg';
+      link.href = dataURL;
+      link.click();
+      
+      canvas.remove(watermark);
+    }
+
+    // Include your image handling logic here (same as your original redtrain3.html)
+  </script>
+</body>
+</html>
+
+    
+
+
+
+  
